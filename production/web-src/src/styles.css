@@ -40,9 +40,11 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .sbar .logout{background:rgba(255,255,255,.15);border:1px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:7px 11px;font-size:12px;cursor:pointer}
 
 /* Campus map */
-.mapstage{flex:1;position:relative;background:radial-gradient(circle at 50% 38%,#eaf1fb,#d7e2f2);overflow:hidden}
+.mapstage{flex:1;position:relative;background:#bcd49a;overflow:hidden}
 .event .mapstage{flex:0 0 auto;height:52%}
 svg.campus{width:100%;height:100%;display:block}
+.hotspot{cursor:pointer}
+.hotspot:hover circle[fill="transparent"]{fill:rgba(200,16,46,.12)}
 .bld{cursor:pointer}
 .bld .shape{fill:#5a7da6;stroke:#fff;stroke-width:2.5;transition:.15s}
 .bld:hover .shape{fill:var(--bk-red)}

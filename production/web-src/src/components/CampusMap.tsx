@@ -1,50 +1,40 @@
 import type { Campaign, Lang, Location } from '../types';
 import { tx } from '../i18n';
 
-const DECOR = (
-  <>
-    <path className="road" d="M 150 250 V 800" />
-    <path className="road" d="M 150 410 H 660" />
-    <path className="road" d="M 485 250 V 660" />
-    <ellipse className="green" cx="560" cy="370" rx="140" ry="80" />
-    <ellipse className="green" cx="300" cy="540" rx="120" ry="70" />
-    <ellipse className="green" cx="120" cy="760" rx="120" ry="70" />
-  </>
-);
+// Bản đồ nền vẽ tay (sinh từ ban-do-bk-vetay.html -> generate-map-svg.cjs).
+// Toạ độ địa điểm (mapX/mapY) nằm trong hệ viewBox 1250 x 1070 của ảnh nền.
+const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
+const VB_W = 1250;
+const VB_H = 1070;
 
-function geom(l: Location) {
-  const s = l.shape;
-  if (s?.type === 'rect') {
-    const w = s.w ?? 150, h = s.h ?? 120;
-    return { cx: l.mapX, cy: l.mapY, laby: l.mapY + h / 2 + 26, w, h };
-  }
-  if (s?.type === 'stadium') return { cx: l.mapX, cy: l.mapY, laby: l.mapY + (s.ry ?? 80) + 26 };
-  return { cx: l.mapX, cy: l.mapY, laby: l.mapY + 82 }; // arch
-}
-
-function Shape({ l }: { l: Location }) {
-  const s = l.shape;
-  if (s?.type === 'rect') {
-    const w = s.w ?? 150, h = s.h ?? 120;
-    return <rect className="shape" x={l.mapX - w / 2} y={l.mapY - h / 2} width={w} height={h} rx={10} />;
-  }
-  if (s?.type === 'stadium')
-    return <ellipse className="shape" cx={l.mapX} cy={l.mapY} rx={s.rx ?? 140} ry={s.ry ?? 90} />;
-  const c = l.mapX, y = l.mapY;
-  const d = `M ${c - 58} ${y + 72} L ${c - 58} ${y - 12} Q ${c} ${y - 98} ${c + 58} ${y - 12} L ${c + 58} ${y + 72} L ${c + 34} ${y + 72} L ${c + 34} ${y + 2} Q ${c} ${y - 58} ${c - 34} ${y + 2} L ${c - 34} ${y + 72} Z`;
-  return <path className="shape" d={d} />;
-}
-
+// Tín hiệu LIVE (vòng lan toả) cho địa điểm đang có sự kiện.
 function Signal({ cx, cy }: { cx: number; cy: number }) {
   return (
     <g pointerEvents="none">
-      <circle cx={cx} cy={cy} r={16} fill="none" stroke="#16a34a" strokeWidth={4}>
-        <animate attributeName="r" values="16;62" dur="1.8s" repeatCount="indefinite" />
+      <circle cx={cx} cy={cy} r={24} fill="none" stroke="#16a34a" strokeWidth={5}>
+        <animate attributeName="r" values="24;88" dur="1.8s" repeatCount="indefinite" />
         <animate attributeName="opacity" values="0.85;0" dur="1.8s" repeatCount="indefinite" />
       </circle>
-      <circle cx={cx} cy={cy} r={16} fill="#16a34a" stroke="#fff" strokeWidth={2} />
-      <text x={cx} y={cy + 5} textAnchor="middle" fontSize={16}>📡</text>
-      <text className="siglab" x={cx} y={cy - 28}>● LIVE</text>
+      <circle cx={cx} cy={cy} r={20} fill="#16a34a" stroke="#fff" strokeWidth={3} />
+      <text x={cx} y={cy + 6} textAnchor="middle" fontSize={20} pointerEvents="none">📡</text>
+      <text className="siglab" x={cx} y={cy - 32} fontSize={15}>● LIVE</text>
+    </g>
+  );
+}
+
+// Pin đánh dấu địa điểm có thông tin (gợi ý chạm được).
+function Pin({ cx, cy, evt }: { cx: number; cy: number; evt?: boolean }) {
+  const color = evt ? '#7a3cc8' : '#c8102e';
+  return (
+    <g pointerEvents="none">
+      <ellipse cx={cx} cy={cy + 2} rx={9} ry={3} fill="rgba(0,0,0,.25)" />
+      <path
+        d={`M ${cx} ${cy} C ${cx - 13} ${cy - 18} ${cx - 11} ${cy - 36} ${cx} ${cy - 36} C ${cx + 11} ${cy - 36} ${cx + 13} ${cy - 18} ${cx} ${cy} Z`}
+        fill={color}
+        stroke="#fff"
+        strokeWidth={2.5}
+      />
+      <circle cx={cx} cy={cy - 24} r={6} fill="#fff" />
     </g>
   );
 }
@@ -69,20 +59,28 @@ export default function CampusMap({
   const visible = locations.filter((l) => !l.isHidden);
 
   return (
-    <svg id={id} className="campus" viewBox="0 0 720 860" preserveAspectRatio="xMidYMid meet">
-      {DECOR}
+    <svg id={id} className="campus" viewBox={`0 0 ${VB_W} ${VB_H}`} preserveAspectRatio="xMidYMid meet">
+      {/* Nền bản đồ vẽ tay */}
+      <image href={MAP_URL} x={0} y={0} width={VB_W} height={VB_H} />
+
+      {/* Lớp tương tác: vùng chạm trong suốt + pin gợi ý cho từng địa điểm */}
       {visible.map((l) => {
-        const g = geom(l);
         const evt = mode === 'event' && eventLocs.has(l.slug);
         return (
-          <g key={l.id} className={`bld ${evt ? 'evt' : ''}`} onClick={() => onSelect(l)}>
-            <Shape l={l} />
-            <text className="blab" x={g.cx} y={g.laby}>
-              {tx(l.i18n, lang, 'name')}
-            </text>
+          <g
+            key={l.id}
+            className="hotspot"
+            onClick={() => onSelect(l)}
+            role="button"
+            aria-label={tx(l.i18n, lang, 'name')}
+          >
+            <circle cx={l.mapX} cy={l.mapY} r={48} fill="transparent" style={{ cursor: 'pointer' }} />
+            {!(mode === 'event' && liveLocs.has(l.slug)) && <Pin cx={l.mapX} cy={l.mapY} evt={evt} />}
           </g>
         );
       })}
+
+      {/* Tín hiệu LIVE (chỉ ở chế độ sự kiện) */}
       {mode === 'event' &&
         visible
           .filter((l) => liveLocs.has(l.slug))

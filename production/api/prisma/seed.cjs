@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 
 const locations = [
   {
-    slug: 'parabol', type: 'SPOT', mapX: 165, mapY: 170, order: 0,
+    slug: 'parabol', type: 'SPOT', mapX: 92, mapY: 560, order: 0,
     shape: { type: 'arch' }, palette: { sky: '#7fb2e8', ground: '#6f7d54', bld: '#9e1b32' },
     i18n: {
       vi: {
@@ -24,7 +24,7 @@ const locations = [
     ],
   },
   {
-    slug: 'c1', type: 'SPOT', mapX: 202, mapY: 395, order: 1,
+    slug: 'c1', type: 'SPOT', mapX: 427, mapY: 305, order: 1,
     shape: { type: 'rect', w: 165, h: 130 }, palette: { sky: '#9cc4ec', ground: '#8a8170', bld: '#0a3d62' },
     i18n: {
       vi: {
@@ -41,7 +41,7 @@ const locations = [
     ],
   },
   {
-    slug: 'library', type: 'SPOT', mapX: 485, mapY: 207, order: 2,
+    slug: 'library', type: 'SPOT', mapX: 647, mapY: 715, order: 2,
     shape: { type: 'rect', w: 170, h: 175 }, palette: { sky: '#aacdf0', ground: '#7d8a6a', bld: '#1565c0' },
     i18n: {
       vi: {
@@ -58,7 +58,7 @@ const locations = [
     ],
   },
   {
-    slug: 'c2', type: 'SPOT', mapX: 232, mapY: 657, order: 3,
+    slug: 'c2', type: 'SPOT', mapX: 248, mapY: 450, order: 3,
     shape: { type: 'rect', w: 185, h: 115 }, palette: { sky: '#bcd4ef', ground: '#7f8568', bld: '#37474f' },
     i18n: {
       vi: {
@@ -74,7 +74,7 @@ const locations = [
     ],
   },
   {
-    slug: 'stadium', type: 'EVENT', mapX: 500, mapY: 520, order: 4,
+    slug: 'stadium', type: 'EVENT', mapX: 446, mapY: 470, order: 4,
     shape: { type: 'stadium', rx: 140, ry: 92 }, palette: { sky: '#ffd27f', ground: '#9a7b4f', bld: '#7a3cc8' },
     i18n: {
       vi: {
