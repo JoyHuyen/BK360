@@ -53,13 +53,7 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .ribbon::after{content:"";position:absolute;left:8px;right:8px;top:5px;height:1px;background:rgba(255,255,255,.45)}
 .ribbon b{color:#ffd24d}
 
-.emblem{position:relative;margin-top:22px;width:140px;height:140px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
-  background:radial-gradient(circle at 50% 32%, #c8102e, #9e1b32 70%);
-  box-shadow:0 0 0 4px #fff,0 0 0 8px rgba(245,179,1,.95),0 14px 36px rgba(158,27,50,.4)}
-.emblem::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,rgba(255,255,255,.45),transparent 42%);opacity:.5;pointer-events:none}
-.em70{font-size:62px;font-weight:800;line-height:.9;letter-spacing:-2px;background:linear-gradient(180deg,#fff3cf,#ffd24d 55%,#f1a500);-webkit-background-clip:text;background-clip:text;color:transparent}
-.emyr{font-size:13px;font-weight:800;letter-spacing:6px;padding-left:6px;color:#ffe7a8;margin-top:1px}
-.years{margin-top:14px;color:#5a3d00;font-weight:800;font-size:13px;letter-spacing:3px;background:linear-gradient(120deg,#ffd24d,#f5b301);padding:5px 16px;border-radius:30px;box-shadow:0 6px 16px rgba(214,150,0,.4)}
+.years{margin-top:18px;color:#5a3d00;font-weight:800;font-size:13px;letter-spacing:3px;background:linear-gradient(120deg,#ffd24d,#f5b301);padding:5px 16px;border-radius:30px;box-shadow:0 6px 16px rgba(214,150,0,.4)}
 
 .welcome h1.brand{color:var(--bk-red);font-size:46px;font-weight:800;margin-top:16px;line-height:1;letter-spacing:1px}
 .welcome h1.brand .g{background:linear-gradient(180deg,#f2a900,#e08c00);-webkit-background-clip:text;background-clip:text;color:transparent}

@@ -104,10 +104,6 @@ export default function Welcome({
           🎉 {lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>} 🎉
         </div>
 
-        <div className="emblem">
-          <span className="em70">70</span>
-          <span className="emyr">{lang === 'vi' ? 'NĂM' : 'YEARS'}</span>
-        </div>
         <div className="years">1956 — 2026</div>
 
         <h1 className="brand">BK<span className="g">360</span></h1>
