@@ -45,7 +45,9 @@ export default function Welcome({
       </button>
 
       <div className="wrap">
-        <div className="kicker">★ {lang === 'vi' ? 'KỶ NIỆM 70 NĂM THÀNH LẬP' : '70th ANNIVERSARY'} ★</div>
+        <div className="ribbon">
+          🎉 {lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>} 🎉
+        </div>
 
         <div className="emblem">
           <span className="em70">70</span>
