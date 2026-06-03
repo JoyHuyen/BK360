@@ -7,10 +7,12 @@ import InfoPanel from '../components/InfoPanel';
 export default function Map2D({
   locations,
   lang,
+  mapBg,
   onBack,
 }: {
   locations: Location[];
   lang: Lang;
+  mapBg?: string | null;
   onBack: () => void;
 }) {
   const [sel, setSel] = useState<Location | null>(null);
@@ -24,7 +26,7 @@ export default function Map2D({
         </div>
       </div>
       <div className="mapstage">
-        <CampusMap id="svgMap2d" locations={locations} lang={lang} mode="map" onSelect={setSel} />
+        <CampusMap id="svgMap2d" locations={locations} lang={lang} mode="map" mapBg={mapBg} onSelect={setSel} />
         <div className="hint">{t('tapBuilding', lang)}</div>
       </div>
       {sel && <InfoPanel location={sel} lang={lang} onClose={() => setSel(null)} />}

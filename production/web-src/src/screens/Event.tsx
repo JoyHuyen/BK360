@@ -8,11 +8,13 @@ export default function EventScreen({
   campaigns,
   locations,
   lang,
+  mapBg,
   onBack,
 }: {
   campaigns: Campaign[];
   locations: Location[];
   lang: Lang;
+  mapBg?: string | null;
   onBack: () => void;
 }) {
   const [activeId, setActiveId] = useState(campaigns[0]?.id);
@@ -39,7 +41,7 @@ export default function EventScreen({
         </div>
       </div>
       <div className="mapstage">
-        <CampusMap id="svgEvent" locations={locations} lang={lang} mode="event" campaign={camp} onSelect={setSel} />
+        <CampusMap id="svgEvent" locations={locations} lang={lang} mode="event" campaign={camp} mapBg={mapBg} onSelect={setSel} />
       </div>
       <div className="sched">
         {campaigns.length > 1 && (

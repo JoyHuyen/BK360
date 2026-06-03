@@ -30,4 +30,18 @@ export class ProjectsService {
   list() {
     return this.prisma.project.findMany({ where: { enabled: true }, orderBy: { order: 'asc' } });
   }
+
+  // Project hiện hành (mặc định) — gồm ảnh nền bản đồ 2D (mapBg) & theme.
+  async current(slug?: string) {
+    const s = (slug && slug.trim()) || this.defaultSlug();
+    const p = await this.prisma.project.findUnique({ where: { slug: s } });
+    if (!p) return null;
+    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme };
+  }
+
+  async update(data: { mapBg?: string | null; name?: string; theme?: any }, slug?: string) {
+    const s = (slug && slug.trim()) || this.defaultSlug();
+    const p = await this.prisma.project.update({ where: { slug: s }, data });
+    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme };
+  }
 }

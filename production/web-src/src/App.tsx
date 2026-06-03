@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { api, setToken } from './api';
-import type { Campaign, Lang, Location, Screen, User } from './types';
+import type { Campaign, Lang, Location, Project, Screen, User } from './types';
 import Welcome from './screens/Welcome';
 import Map2D from './screens/Map2D';
 import EventScreen from './screens/Event';
@@ -19,14 +19,16 @@ export default function App() {
   const [lang, setLang] = useState<Lang>('vi');
   const [locations, setLocations] = useState<Location[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [project, setProject] = useState<Project | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const loadPublic = useCallback(async () => {
     try {
-      const [locs, camps] = await Promise.all([api.locations(), api.campaigns()]);
+      const [locs, camps, proj] = await Promise.all([api.locations(), api.campaigns(), api.project().catch(() => null)]);
       setLocations(locs);
       setCampaigns(camps);
+      setProject(proj);
       setErr(null);
     } catch (e: any) {
       setErr(e.message || 'Không tải được dữ liệu từ API');
@@ -68,9 +70,9 @@ export default function App() {
           onGo={setScreen}
         />
       )}
-      {screen === 'map2d' && <Map2D locations={locations} lang={lang} onBack={() => setScreen('welcome')} />}
+      {screen === 'map2d' && <Map2D locations={locations} lang={lang} mapBg={project?.mapBg} onBack={() => setScreen('welcome')} />}
       {screen === 'event' && (
-        <EventScreen campaigns={campaigns} locations={locations} lang={lang} onBack={() => setScreen('welcome')} />
+        <EventScreen campaigns={campaigns} locations={locations} lang={lang} mapBg={project?.mapBg} onBack={() => setScreen('welcome')} />
       )}
       <Suspense fallback={<Loader />}>
         {screen === 'vr360' && <VR360 locations={locations} lang={lang} onBack={() => setScreen('welcome')} />}

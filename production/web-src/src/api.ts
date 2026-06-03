@@ -32,6 +32,9 @@ export const api = {
   config: () => req('/config'),
   locations: () => req<Location[]>('/locations'),
   campaigns: () => req<Campaign[]>('/campaigns'),
+  project: () => req<import('./types').Project | null>('/projects/current'),
+  updateProject: (d: { mapBg?: string | null; name?: string }) =>
+    req('/projects/current', { method: 'PATCH', body: JSON.stringify(d) }),
 
   // auth
   login: (email: string, password: string) =>

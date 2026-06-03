@@ -45,6 +45,7 @@ export default function CampusMap({
   lang,
   mode,
   campaign,
+  mapBg,
   onSelect,
 }: {
   id: string;
@@ -52,6 +53,7 @@ export default function CampusMap({
   lang: Lang;
   mode: 'map' | 'event';
   campaign?: Campaign | null;
+  mapBg?: string | null;
   onSelect: (l: Location) => void;
 }) {
   const eventLocs = new Set(campaign?.schedule.map((e) => e.loc) ?? []);
@@ -60,8 +62,9 @@ export default function CampusMap({
 
   return (
     <svg id={id} className="campus" viewBox={`0 0 ${VB_W} ${VB_H}`} preserveAspectRatio="xMidYMid meet">
-      {/* Nền bản đồ vẽ tay */}
-      <image href={MAP_URL} x={0} y={0} width={VB_W} height={VB_H} />
+      {/* Nền bản đồ: ảnh nền tuỳ chọn của project, mặc định bản đồ vẽ tay.
+          preserveAspectRatio=none → fill khít khung 1250×1070 để pin khớp giữa admin & người xem. */}
+      <image href={mapBg || MAP_URL} x={0} y={0} width={VB_W} height={VB_H} preserveAspectRatio="none" />
 
       {/* Lớp tương tác: vùng chạm trong suốt + pin gợi ý cho từng địa điểm */}
       {visible.map((l) => {

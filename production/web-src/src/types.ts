@@ -1,6 +1,14 @@
 export type Lang = 'vi' | 'en';
 
-export type MediaKind = 'PANO360' | 'OLD' | 'NOW' | 'AUDIO' | 'MODEL3D';
+export type MediaKind = 'PANO360' | 'OLD' | 'NOW' | 'AUDIO' | 'MODEL3D' | 'MAPBG';
+
+export interface Project {
+  id?: string;
+  slug: string;
+  name: string;
+  mapBg?: string | null;
+  theme?: any;
+}
 export interface Media {
   id: string;
   kind: MediaKind;

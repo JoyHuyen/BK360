@@ -36,6 +36,7 @@ const MAP_H = 1070;
 const NAVS = [
   { id: 'overview', icon: '🏠', label: 'Tổng quan' },
   { id: 'locations', icon: '📍', label: 'Địa điểm' },
+  { id: 'map', icon: '🗺️', label: 'Bản đồ nền' },
   { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
   { id: 'import', icon: '📥', label: 'Nhập liệu' },
 ];
@@ -88,9 +89,11 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
   const [nav, setNav] = useState('locations');
   const [locs, setLocs] = useState<Location[]>([]);
   const [camps, setCamps] = useState<Campaign[]>([]);
+  const [mapBg, setMapBg] = useState<string | null>(null);
   const reload = async () => {
     setLocs(await api.adminLocations());
     setCamps(await api.adminCampaigns());
+    setMapBg((await api.project().catch(() => null))?.mapBg ?? null);
     reloadPublic();
   };
   useEffect(() => { reload(); }, []);
@@ -114,7 +117,8 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
       <main className="adm-main">
         <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
         {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
-        {nav === 'locations' && <LocationsPanel locs={locs} reload={reload} />}
+        {nav === 'locations' && <LocationsPanel locs={locs} mapBg={mapBg} reload={reload} />}
+        {nav === 'map' && <MapPanel mapBg={mapBg} reload={reload} />}
         {nav === 'campaigns' && <CampaignsPanel camps={camps} locs={locs} reload={reload} />}
         {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
         {nav === 'users' && user.role === 'SUPERADMIN' && <UsersPanel meId={user.id || user.sub} />}
@@ -185,7 +189,7 @@ function Overview({ locs, camps, go }: any) {
 }
 
 /* ===================== LOCATIONS ===================== */
-function LocationsPanel({ locs, reload }: any) {
+function LocationsPanel({ locs, mapBg, reload }: any) {
   const [sel, setSel] = useState<Location | 'new' | null>(null);
   const [q, setQ] = useState('');
   const filtered = locs.filter((l: Location) =>
@@ -208,7 +212,7 @@ function LocationsPanel({ locs, reload }: any) {
       </div>
       <div className="adm-edit">
         {sel ? (
-          <LocationEditor key={sel === 'new' ? 'new' : sel.id} loc={sel === 'new' ? null : sel}
+          <LocationEditor key={sel === 'new' ? 'new' : sel.id} loc={sel === 'new' ? null : sel} mapBg={mapBg}
             onSaved={() => { reload(); }} onClose={() => setSel(null)} onDeleted={() => { setSel(null); reload(); }} />
         ) : <div className="adm-empty">Chọn một địa điểm bên trái, hoặc bấm <b>+ Thêm</b>.</div>}
       </div>
@@ -216,7 +220,7 @@ function LocationsPanel({ locs, reload }: any) {
   );
 }
 
-function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
+function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
   const [tab, setTab] = useState('info');
   const [f, setF] = useState<any>(() => ({
     slug: loc?.slug || '', type: loc?.type || 'SPOT', isHidden: !!loc?.isHidden,
@@ -304,7 +308,7 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
             <textarea rows={2} value={f.vi.voiceText || ''} onChange={(e) => setVi('voiceText', e.target.value)} />
           </>
         )}
-        {tab === 'pos' && <PinPlacer x={Number(f.mapX) || 0} y={Number(f.mapY) || 0} onChange={(x: number, y: number) => setF((p: any) => ({ ...p, mapX: x, mapY: y }))} />}
+        {tab === 'pos' && <PinPlacer x={Number(f.mapX) || 0} y={Number(f.mapY) || 0} mapBg={mapBg} onChange={(x: number, y: number) => setF((p: any) => ({ ...p, mapX: x, mapY: y }))} />}
         {tab === 'media' && (
           <>
             <p className="muted">Dán <b>link chia sẻ</b> (Drive/OneDrive — tự chuyển sang link nhúng) hoặc <b>Tải file</b> lên server.</p>
@@ -348,7 +352,7 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
 
 // Đặt pin trên CHÍNH bản đồ vẽ tay của public (hệ toạ độ 1250 x 1070).
 // Bấm hoặc kéo-thả pin; toạ độ lưu khớp tuyệt đối với CampusMap → không lệch.
-function PinPlacer({ x, y, onChange }: any) {
+function PinPlacer({ x, y, mapBg, onChange }: any) {
   const svgRef = useRef<SVGSVGElement>(null);
   const [drag, setDrag] = useState(false);
 
@@ -384,7 +388,7 @@ function PinPlacer({ x, y, onChange }: any) {
           onTouchMove={place}
           style={{ width: '100%', height: 'auto', display: 'block', touchAction: 'none', cursor: 'crosshair', background: '#bcd49a', borderRadius: 14 }}
         >
-          <image href={MAP_URL} x={0} y={0} width={MAP_W} height={MAP_H} />
+          <image href={mapBg || MAP_URL} x={0} y={0} width={MAP_W} height={MAP_H} preserveAspectRatio="none" />
           <g pointerEvents="none">
             <ellipse cx={x} cy={y + 3} rx={14} ry={5} fill="rgba(0,0,0,.25)" />
             <path
@@ -584,6 +588,65 @@ function ImportPanel({ locs, reload }: any) {
         </div>
       )}
       {log && <div className="adm-card">{log}</div>}
+    </div>
+  );
+}
+
+/* ===================== BẢN ĐỒ NỀN 2D ===================== */
+function MapPanel({ mapBg, reload }: any) {
+  const [bg, setBg] = useState<string | null>(mapBg ?? null);
+  const [link, setLink] = useState('');
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setBg(mapBg ?? null); }, [mapBg]);
+
+  const save = async (url: string | null) => {
+    setMsg('Đang lưu…');
+    try { await api.updateProject({ mapBg: url }); setBg(url); setMsg('Đã lưu ✓'); reload(); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const upload = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const file = inp.files?.[0]; if (!file) return; setMsg('Đang tải ảnh…');
+      try { const r: any = await api.uploadMedia(file, 'MAPBG'); await save(r?.meta?.optimized || r?.url || ''); }
+      catch (e: any) { setMsg('Lỗi tải: ' + e.message); }
+    };
+    inp.click();
+  };
+  const fromLink = async () => {
+    if (!/^https?:\/\//i.test(link.trim())) { setMsg('Dán link http(s).'); return; }
+    setMsg('Đang kéo ảnh về server…');
+    try { const r: any = await api.importMediaUrl(link.trim(), 'MAPBG'); await save(r?.meta?.optimized || r?.url || ''); setLink(''); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const isDefault = !bg;
+
+  return (
+    <div className="adm-body">
+      <div className="adm-card">
+        <h4 style={{ margin: '0 0 6px' }}>Ảnh nền bản đồ 2D</h4>
+        <p className="muted" style={{ marginTop: 0 }}>
+          Tải ảnh sơ đồ khuôn viên riêng để thay nền bản đồ. Pin địa điểm (tab <b>Vị trí</b>) sẽ đặt trên chính ảnh này và khớp với trang người xem.
+          Bỏ trống = dùng <b>bản đồ vẽ tay</b> mặc định. Khuyến nghị ảnh ngang, tỉ lệ ~5:4.
+        </p>
+        <div className="am-acts" style={{ justifyContent: 'flex-start' }}>
+          <button className="aprim" onClick={upload}>⬆️ Tải ảnh nền</button>
+          {!isDefault && <button className="adel" onClick={() => save(null)}>↺ Về bản đồ vẽ tay</button>}
+        </div>
+        <div className="frow" style={{ marginTop: 10 }}>
+          <input placeholder="hoặc dán link ảnh (Drive/OneDrive)…" value={link} onChange={(e) => setLink(e.target.value)} />
+          <button className="asec" type="button" onClick={fromLink}>Dùng link</button>
+        </div>
+        {msg && <div className="msg" style={{ marginTop: 8 }}>{msg}</div>}
+      </div>
+      <div className="adm-card">
+        <p className="muted" style={{ marginTop: 0 }}>Xem trước {isDefault ? '(bản đồ vẽ tay mặc định)' : '(ảnh nền tuỳ chọn)'}:</p>
+        <div className="pinmap">
+          <svg viewBox="0 0 1250 1070" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block', background: '#bcd49a', borderRadius: 14 }}>
+            <image href={bg || MAP_URL} x={0} y={0} width={1250} height={1070} preserveAspectRatio="none" />
+          </svg>
+        </div>
+      </div>
     </div>
   );
 }
