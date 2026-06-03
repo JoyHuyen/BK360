@@ -24,7 +24,7 @@ function Signal({ cx, cy }: { cx: number; cy: number }) {
 
 // Pin đánh dấu địa điểm có thông tin (gợi ý chạm được).
 function Pin({ cx, cy, evt }: { cx: number; cy: number; evt?: boolean }) {
-  const color = evt ? '#7a3cc8' : '#c8102e';
+  const color = evt ? '#f5b301' : '#c8102e';
   return (
     <g pointerEvents="none">
       <ellipse cx={cx} cy={cy + 2} rx={9} ry={3} fill="rgba(0,0,0,.25)" />

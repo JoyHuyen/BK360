@@ -35,13 +35,13 @@ export default function Welcome({
             <div className="arw">›</div>
           </div>
           <div className="opt" onClick={() => onGo('vr360')}>
-            <div className="ic" style={{ background: '#0a3d62' }}>🌐</div>
+            <div className="ic" style={{ background: '#26323f' }}>🌐</div>
             <div className="t"><b>{t('vr360', lang)}</b><span>{t('vr360Desc', lang)}</span></div>
             <div className="arw">›</div>
           </div>
           {enabledCampaigns > 0 && (
             <div className="opt" onClick={() => onGo('event')}>
-              <div className="ic" style={{ background: '#7a3cc8' }}>⭐</div>
+              <div className="ic" style={{ background: '#f5b301', color: '#3a2b00' }}>⭐</div>
               <div className="t"><b>{t('events', lang)}</b><span>{t('eventsDesc', lang)}</span></div>
               <div className="arw">›</div>
             </div>
