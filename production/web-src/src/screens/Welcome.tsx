@@ -76,7 +76,7 @@ export default function Welcome({
         ))}
         {BT.flags.map((f) => (
           <span key={f.i} className="bflag" style={{ left: `${f.left}%`, top: `${f.top}px`, transform: `translateX(-50%) rotate(${f.rot}deg)` }}>
-            <i className={`c${f.i % 6}`} style={{ animationDelay: `${f.delay}s`, animationDuration: `${f.dur}s` }} />
+            <i className={`cr${f.i % 2}`} style={{ animationDelay: `${f.delay}s`, animationDuration: `${f.dur}s` }} />
           </span>
         ))}
       </div>

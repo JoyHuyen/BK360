@@ -26,13 +26,10 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .bunting{position:absolute;top:calc(6px + var(--safe-t));left:0;right:0;height:124px;z-index:0;pointer-events:none;transform-origin:50% 0;animation:bsway 6s ease-in-out infinite}
 .bstring{position:absolute;inset:0;width:100%;height:100%}
 .bflag{position:absolute;transform-origin:top center}
-.bflag i{display:block;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:33px solid #f5b301;filter:drop-shadow(0 3px 2px rgba(0,0,0,.14));transform-origin:top center;animation:flutter 2.8s ease-in-out infinite}
-.bflag i.c0{border-top-color:#f5b301}
-.bflag i.c1{border-top-color:#e2342f}
-.bflag i.c2{border-top-color:#14a5a5}
-.bflag i.c3{border-top-color:#ff7aa2}
-.bflag i.c4{border-top-color:#3f8fd0}
-.bflag i.c5{border-top-color:#43b56b}
+.bflag i{display:block;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:33px solid var(--bk-red2);filter:drop-shadow(0 3px 2px rgba(0,0,0,.14));transform-origin:top center;animation:flutter 2.8s ease-in-out infinite}
+/* Cờ đỏ theo nhận diện Bách Khoa — xen kẽ 2 sắc đỏ */
+.bflag i.cr0{border-top-color:#c8102e}
+.bflag i.cr1{border-top-color:#9e1b32}
 .streamer{position:absolute;transform:translateX(-50%);transform-origin:top center;overflow:visible;animation:dangle ease-in-out infinite}
 @keyframes flutter{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
 @keyframes bsway{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
