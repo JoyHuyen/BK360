@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { CampaignsService } from './campaigns.service';
 import { CreateCampaignDto, UpdateCampaignDto, ToggleDto } from './campaign.dto';
 import { Public } from '../common/public.decorator';
@@ -9,8 +10,10 @@ import { CurrentUser, JwtUser } from '../common/current-user.decorator';
 export class CampaignsController {
   constructor(private readonly svc: CampaignsService) {}
 
-  // ----- Công khai: chỉ trả sự kiện đang bật -----
+  // ----- Công khai: chỉ trả sự kiện đang bật — bỏ throttle + cache 30s -----
   @Public()
+  @SkipThrottle()
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=300')
   @Get('campaigns')
   active(@Query('project') project?: string) {
     return this.svc.listActive(project);

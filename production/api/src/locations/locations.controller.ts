@@ -1,4 +1,5 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query } from '@nestjs/common';
+import { SkipThrottle } from '@nestjs/throttler';
 import { LocationsService } from './locations.service';
 import { CreateLocationDto, UpdateLocationDto, VisibilityDto } from './location.dto';
 import { Public } from '../common/public.decorator';
@@ -9,14 +10,18 @@ import { CurrentUser, JwtUser } from '../common/current-user.decorator';
 export class LocationsController {
   constructor(private readonly svc: LocationsService) {}
 
-  // ----- Công khai -----
+  // ----- Công khai (đọc) — bỏ throttle (khách đi chung IP) + cho phép cache 30s -----
   @Public()
+  @SkipThrottle()
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=300')
   @Get('locations')
   list(@Query('project') project?: string) {
     return this.svc.listPublic(project);
   }
 
   @Public()
+  @SkipThrottle()
+  @Header('Cache-Control', 'public, max-age=30, stale-while-revalidate=300')
   @Get('locations/:slug')
   get(@Param('slug') slug: string, @Query('project') project?: string) {
     return this.svc.getPublic(slug, project);

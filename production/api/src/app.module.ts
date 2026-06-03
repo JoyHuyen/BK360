@@ -1,7 +1,7 @@
-import { Module, Controller, Get } from '@nestjs/common';
+import { Module, Controller, Get, Header } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import { APP_GUARD } from '@nestjs/core';
-import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 import { PrismaModule } from './prisma/prisma.module';
 import { ProjectsModule } from './projects/projects.module';
 import { AuthModule } from './auth/auth.module';
@@ -12,6 +12,8 @@ import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { Public } from './common/public.decorator';
 
+// Public reads: bỏ rate-limit (khách tham quan đi chung IP/NAT) + cho phép cache.
+@SkipThrottle()
 @Controller()
 class HealthController {
   @Public()
@@ -21,6 +23,7 @@ class HealthController {
   }
 
   @Public()
+  @Header('Cache-Control', 'public, max-age=300')
   @Get('config')
   config() {
     return {
