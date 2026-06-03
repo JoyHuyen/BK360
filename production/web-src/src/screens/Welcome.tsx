@@ -54,10 +54,17 @@ export default function Welcome({
   const years = w.years || '1956 — 2026';
   const tagline = w.tagline?.[lang] || t('appTag', lang);
   const subtitle = w.subtitle?.[lang] || t('subtitle', lang);
-  const effects = w.effects !== false; // mặc định bật
-  // Ảnh nền tuỳ chọn: phủ lớp kem trong suốt phía trên để giữ tông sáng & chữ dễ đọc.
+  const bgOnly = !!w.bgOnly && !!w.bg; // ảnh nền tự chứa thông tin → ẩn chữ
+  const effects = w.effects !== false && !bgOnly; // ẩn hiệu ứng khi để ảnh nền phụ trách
+  // Có ảnh nền: bình thường phủ lớp kem để chữ dễ đọc; chế độ bgOnly để ảnh nét, chỉ tối nhẹ đáy cho nút.
   const bgStyle = w.bg
-    ? { backgroundImage: `linear-gradient(rgba(255,248,238,.62), rgba(255,235,219,.82)), url(${w.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    ? {
+        backgroundImage: bgOnly
+          ? `linear-gradient(rgba(0,0,0,0) 58%, rgba(0,0,0,.28)), url(${w.bg})`
+          : `linear-gradient(rgba(255,248,238,.62), rgba(255,235,219,.82)), url(${w.bg})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+      }
     : undefined;
   const tiles: { id: Screen; icon: string; bg: string; fg?: string; title: string; desc: string }[] = [
     { id: 'map2d', icon: '🗺️', bg: '#9e1b32', title: t('map2d', lang), desc: t('map2dDesc', lang) },
@@ -114,17 +121,19 @@ export default function Welcome({
       </button>
 
       <div className="wrap">
-        <div className="ribbon">
-          🎉 {ribbonCustom ? <>{ribbonCustom}</> : (lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>)} 🎉
-        </div>
+        {!bgOnly && <>
+          <div className="ribbon">
+            🎉 {ribbonCustom ? <>{ribbonCustom}</> : (lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>)} 🎉
+          </div>
 
-        <div className="years">{years}</div>
+          <div className="years">{years}</div>
 
-        <h1 className="brand">{w.title?.trim() ? w.title : <>BK<span className="g">360</span></>}</h1>
-        <div className="tag">{tagline}</div>
-        <div className="sub">{subtitle}</div>
+          <h1 className="brand">{w.title?.trim() ? w.title : <>BK<span className="g">360</span></>}</h1>
+          <div className="tag">{tagline}</div>
+          <div className="sub">{subtitle}</div>
+        </>}
 
-        <div className="opts">
+        <div className="opts" style={bgOnly ? { marginTop: 'auto' } : undefined}>
           {tiles.map((tl) => (
             <div className="opt" key={tl.id} onClick={() => onGo(tl.id)}>
               <div className="ic" style={{ background: tl.bg, color: tl.fg || '#fff' }}>{tl.icon}</div>
@@ -134,7 +143,7 @@ export default function Welcome({
           ))}
         </div>
 
-        <div className="welcome-foot">Đại học Bách khoa Hà Nội · 1956–2026</div>
+        {!bgOnly && <div className="welcome-foot">Đại học Bách khoa Hà Nội · 1956–2026</div>}
       </div>
     </div>
   );

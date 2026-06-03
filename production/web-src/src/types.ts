@@ -15,6 +15,7 @@ export interface WelcomeConfig {
   years?: string;
   effects?: boolean; // bật hiệu ứng lễ hội (dây cờ + confetti), mặc định bật
   bg?: string | null; // ảnh nền màn chào (tuỳ chọn)
+  bgOnly?: boolean; // ẩn toàn bộ chữ — để ảnh nền tự chứa thông tin
 }
 export interface Project {
   id?: string;

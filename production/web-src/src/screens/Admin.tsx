@@ -64,7 +64,6 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
 // Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
   { items: [
-    { id: 'overview', icon: 'dashboard', label: 'Dashboard' },
     { id: 'welcome', icon: 'home', label: 'Trang chào' },
   ] },
   {
@@ -787,6 +786,7 @@ function WelcomePanel({ welcome, reload }: any) {
     tagVi: welcome?.tagline?.vi || '', tagEn: welcome?.tagline?.en || '',
     subVi: welcome?.subtitle?.vi || '', subEn: welcome?.subtitle?.en || '',
     years: welcome?.years || '', effects: welcome?.effects !== false, bg: welcome?.bg || '',
+    bgOnly: !!welcome?.bgOnly,
   });
   const [f, setF] = useState<any>(init);
   const [msg, setMsg] = useState('');
@@ -809,7 +809,7 @@ function WelcomePanel({ welcome, reload }: any) {
       tagline: { vi: f.tagVi || undefined, en: f.tagEn || undefined },
       subtitle: { vi: f.subVi || undefined, en: f.subEn || undefined },
       title: f.title || undefined,
-      years: f.years || undefined, effects: !!f.effects, bg: f.bg || null,
+      years: f.years || undefined, effects: !!f.effects, bg: f.bg || null, bgOnly: !!f.bgOnly,
     };
     setMsg('Đang lưu…');
     try { await api.updateProject({ welcome: payload }); setMsg('Đã lưu ✓'); reload(); }
@@ -862,7 +862,11 @@ function WelcomePanel({ welcome, reload }: any) {
           </div>
         )}
 
-        <label className="chk-row" style={{ marginTop: 14 }} title="Dây cờ + confetti trên màn chào">
+        <label className="chk-row" style={{ marginTop: 14 }} title="Ẩn toàn bộ chữ (tiêu đề, ruy băng, mô tả…) để ảnh nền tự chứa thông tin. Cần có ảnh nền; chỉ còn ảnh nền + các nút vào ứng dụng.">
+          <input type="checkbox" checked={f.bgOnly} onChange={(e) => set('bgOnly', e.target.checked)} />
+          <span>Ảnh nền phụ trách thông tin (ẩn toàn bộ chữ)</span>
+        </label>
+        <label className="chk-row" style={{ marginTop: 10 }} title="Dây cờ + confetti trên màn chào">
           <input type="checkbox" checked={f.effects} onChange={(e) => set('effects', e.target.checked)} />
           <span>Hiệu ứng lễ hội (dây cờ + confetti)</span>
         </label>
