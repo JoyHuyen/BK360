@@ -16,7 +16,7 @@ export default function Welcome({
 }) {
   const tiles: { id: Screen; icon: string; bg: string; fg?: string; title: string; desc: string }[] = [
     { id: 'map2d', icon: '🗺️', bg: '#9e1b32', title: t('map2d', lang), desc: t('map2dDesc', lang) },
-    { id: 'vr360', icon: '🌐', bg: '#26323f', title: t('vr360', lang), desc: t('vr360Desc', lang) },
+    { id: 'vr360', icon: '🌐', bg: '#0e8a8a', title: t('vr360', lang), desc: t('vr360Desc', lang) },
     ...(enabledCampaigns > 0
       ? [{ id: 'event' as Screen, icon: '⭐', bg: '#f5b301', fg: '#3a2b00', title: t('events', lang), desc: t('eventsDesc', lang) }]
       : []),
@@ -28,11 +28,11 @@ export default function Welcome({
       <div className="fest-rays" aria-hidden="true" />
       <div className="fest-glow" aria-hidden="true" />
       <div className="confetti" aria-hidden="true">
-        {Array.from({ length: 16 }).map((_, i) => (
+        {Array.from({ length: 22 }).map((_, i) => (
           <span
             key={i}
-            className={`cf c${i % 4}`}
-            style={{ left: `${(i * 6.3 + 3) % 100}%`, animationDelay: `${(i % 8) * 0.8}s`, animationDuration: `${6 + (i % 5)}s` }}
+            className={`cf c${i % 7}`}
+            style={{ left: `${(i * 4.6 + 2) % 100}%`, animationDelay: `${(i % 9) * 0.7}s`, animationDuration: `${6 + (i % 5)}s` }}
           />
         ))}
       </div>
