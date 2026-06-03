@@ -34,29 +34,47 @@ const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const MAP_W = 1250;
 const MAP_H = 1070;
 
+// Bộ icon line đồng bộ (stroke currentColor) cho sidebar.
+function NavIcon({ name }: { name: string }) {
+  const p: Record<string, any> = {
+    dashboard: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>),
+    image: (<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>),
+    pin: (<><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z" /><circle cx="12" cy="10" r="3" /></>),
+    globe: (<><circle cx="12" cy="12" r="9" /><path d="M3 12h18" /><path d="M12 3a15 15 0 0 1 0 18 15 15 0 0 1 0-18z" /></>),
+    calendar: (<><rect x="3" y="4" width="18" height="18" rx="2" /><path d="M16 2v4M8 2v4M3 10h18" /></>),
+    upload: (<><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" /></>),
+    users: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
+    eye: (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></>),
+    logout: (<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>),
+  };
+  return (
+    <svg className="nav-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
+  );
+}
+
 // Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
-  { items: [{ id: 'overview', icon: '📊', label: 'Dashboard' }] },
+  { items: [{ id: 'overview', icon: 'dashboard', label: 'Dashboard' }] },
   {
     title: 'Bản đồ 2D',
     items: [
-      { id: 'map', icon: '🖼️', label: 'Ảnh nền 2D' },
-      { id: 'locations', icon: '📍', label: 'Địa điểm' },
+      { id: 'map', icon: 'image', label: 'Ảnh nền 2D' },
+      { id: 'locations', icon: 'pin', label: 'Địa điểm' },
     ],
   },
   {
     title: 'VR360',
-    items: [{ id: 'vr360', icon: '🌐', label: 'Điểm 360 & tour' }],
+    items: [{ id: 'vr360', icon: 'globe', label: 'Điểm 360 & tour' }],
   },
   {
     title: 'Sự kiện',
-    items: [{ id: 'campaigns', icon: '⭐', label: 'Lịch sự kiện' }],
+    items: [{ id: 'campaigns', icon: 'calendar', label: 'Lịch sự kiện' }],
   },
   {
     title: 'Hệ thống',
     items: [
-      { id: 'import', icon: '📥', label: 'Nhập liệu' },
-      { id: 'users', icon: '👥', label: 'Người dùng', super: true },
+      { id: 'import', icon: 'upload', label: 'Nhập liệu' },
+      { id: 'users', icon: 'users', label: 'Người dùng', super: true },
     ],
   },
 ];
@@ -132,20 +150,23 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
   return (
     <div className="adm-shell">
       <aside className="adm-side">
-        <div className="adm-brand">BK360 · Quản trị</div>
+        <div className="adm-brand">
+          <span className="adm-logo">BK</span>
+          <span className="brand-txt">BK360<small>Quản trị</small></span>
+        </div>
         {groups.map((g, gi) => (
           <div className="adm-grp" key={gi}>
             {g.title && <div className="adm-grp-title">{g.title}</div>}
             {g.items.map((n) => (
               <button key={n.id} className={nav === n.id ? 'on' : ''} onClick={() => setNav(n.id)}>
-                <span>{n.icon}</span> {n.label}
+                <NavIcon name={n.icon} /><span className="lbl">{n.label}</span>
               </button>
             ))}
           </div>
         ))}
         <div className="adm-spacer" />
-        <button onClick={onBack}>↩ Về trang xem</button>
-        <button onClick={logout}>Đăng xuất</button>
+        <button onClick={onBack}><NavIcon name="eye" /><span className="lbl">Về trang xem</span></button>
+        <button onClick={logout}><NavIcon name="logout" /><span className="lbl">Đăng xuất</span></button>
       </aside>
       <main className="adm-main">
         <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
