@@ -1,3 +1,4 @@
+import { useRef } from 'react';
 import type { Lang, Location, ScheduleItem } from '../types';
 import { tx, t } from '../i18n';
 import { makeFacade, mediaUrl } from '../generate';
@@ -25,8 +26,19 @@ export default function InfoPanel({
   const name = tx(location.i18n, lang, 'name');
   const desc = tx(location.i18n, lang, 'description');
   const voice = tx(location.i18n, lang, 'voiceText') || desc || name;
+  const audioUrl = mediaUrl(location, 'AUDIO');
+  const audioRef = useRef<HTMLAudioElement>(null);
   const before = mediaUrl(location, 'OLD') ?? makeFacade(location.palette, 'xua', location.slug);
   const after = mediaUrl(location, 'NOW') ?? makeFacade(location.palette, 'nay', location.slug);
+
+  // Có audio thu sẵn → phát file; nếu không → đọc bằng máy (TTS).
+  const onListen = () => {
+    if (audioUrl && audioRef.current) {
+      speechSynthesis.cancel();
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => speak(voice));
+    } else speak(voice);
+  };
 
   return (
     <div className="info open">
@@ -36,9 +48,10 @@ export default function InfoPanel({
       </div>
       <div className="body">
         <p>{desc}</p>
-        <button className="voice-btn" onClick={() => speak(voice)}>
-          {t('listen', lang)}
+        <button className="voice-btn" onClick={onListen}>
+          {audioUrl ? '🎧 ' : '🔊 '}{t('listen', lang)}
         </button>
+        {audioUrl && <audio ref={audioRef} src={audioUrl} preload="none" style={{ display: 'none' }} />}
 
         {events && events.length > 0 ? (
           <>

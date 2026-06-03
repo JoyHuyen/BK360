@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { api, setToken } from '../api';
 import type { Lang, Location, Campaign, User } from '../types';
@@ -28,12 +28,18 @@ function normalize(v: any, kind: 'image' | 'audio') {
 }
 const yes = (v: any) => ['có', 'co', 'yes', 'x', '1', 'true'].includes(String(v == null ? '' : v).trim().toLowerCase());
 
+// Bản đồ nền dùng chung với public (CampusMap). Toạ độ pin nằm trong hệ này.
+const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
+const MAP_W = 1250;
+const MAP_H = 1070;
+
 const NAVS = [
   { id: 'overview', icon: '🏠', label: 'Tổng quan' },
   { id: 'locations', icon: '📍', label: 'Địa điểm' },
   { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
   { id: 'import', icon: '📥', label: 'Nhập liệu' },
 ];
+const NAV_USERS = { id: 'users', icon: '👥', label: 'Người dùng' };
 
 export default function Admin(props: {
   lang: Lang;
@@ -89,13 +95,14 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
   };
   useEffect(() => { reload(); }, []);
   const logout = async () => { await api.logout().catch(() => {}); setToken(null); setUser(null); onBack(); };
-  const label = NAVS.find((n) => n.id === nav)?.label || '';
+  const navs = user.role === 'SUPERADMIN' ? [...NAVS, NAV_USERS] : NAVS;
+  const label = navs.find((n) => n.id === nav)?.label || '';
 
   return (
     <div className="adm-shell">
       <aside className="adm-side">
         <div className="adm-brand">BK360 · Quản trị</div>
-        {NAVS.map((n) => (
+        {navs.map((n) => (
           <button key={n.id} className={nav === n.id ? 'on' : ''} onClick={() => setNav(n.id)}>
             <span>{n.icon}</span> {n.label}
           </button>
@@ -110,21 +117,39 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         {nav === 'locations' && <LocationsPanel locs={locs} reload={reload} />}
         {nav === 'campaigns' && <CampaignsPanel camps={camps} locs={locs} reload={reload} />}
         {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
+        {nav === 'users' && user.role === 'SUPERADMIN' && <UsersPanel meId={user.id || user.sub} />}
       </main>
     </div>
   );
 }
 
 /* ===================== OVERVIEW ===================== */
+// Liệt kê phần còn thiếu của một địa điểm (giúp đội media biết việc cần làm).
+function missingOf(l: Location): string[] {
+  const k = l.links || {};
+  const m: string[] = [];
+  if (!l.i18n?.vi?.description) m.push('Mô tả');
+  if (!(l.history && l.history.length)) m.push('Lịch sử');
+  if (!k.old) m.push('Ảnh Xưa');
+  if (!k.now) m.push('Ảnh Nay');
+  if (!k.pano360) m.push('360°');
+  if (!k.audio && !l.i18n?.vi?.voiceText) m.push('Thuyết minh');
+  return m;
+}
+
 function Overview({ locs, camps, go }: any) {
   const visible = locs.filter((l: Location) => !l.isHidden).length;
-  const noMedia = locs.filter((l: Location) => !(l.links && (l.links.old || l.links.now || l.links.pano360))).length;
   const on = camps.filter((c: Campaign) => c.enabled).length;
+  const todo = locs
+    .map((l: Location) => ({ l, miss: missingOf(l) }))
+    .filter((x: any) => x.miss.length > 0)
+    .sort((a: any, b: any) => b.miss.length - a.miss.length);
+  const complete = locs.length - todo.length;
   const cards = [
     ['📍', locs.length, 'Địa điểm'],
     ['👁', visible, 'Đang hiển thị'],
     ['⭐', on, 'Sự kiện đang bật'],
-    ['🖼️', noMedia, 'Thiếu ảnh'],
+    ['✅', complete, 'Đã đủ nội dung'],
   ];
   return (
     <div className="adm-body">
@@ -137,6 +162,23 @@ function Overview({ locs, camps, go }: any) {
         <button className="aprim" onClick={() => go('locations')}>+ Quản lý địa điểm</button>
         <button className="asec" onClick={() => go('import')}>📥 Import Excel</button>
         <button className="asec" onClick={() => go('campaigns')}>⭐ Sự kiện</button>
+      </div>
+      <div className="adm-card">
+        <h4 style={{ margin: '0 0 8px' }}>📝 Cần bổ sung nội dung ({todo.length})</h4>
+        {todo.length === 0 ? (
+          <p className="muted">Tất cả địa điểm đã đủ nội dung 🎉</p>
+        ) : (
+          <div className="todo-list">
+            {todo.map(({ l, miss }: any) => (
+              <div className="todo-row" key={l.id} onClick={() => go('locations')}>
+                <b>{l.i18n?.vi?.name || l.slug}</b>
+                <div className="miss-tags">
+                  {miss.map((m: string) => <span className="miss-tag" key={m}>{m}</span>)}
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );
@@ -178,7 +220,7 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
   const [tab, setTab] = useState('info');
   const [f, setF] = useState<any>(() => ({
     slug: loc?.slug || '', type: loc?.type || 'SPOT', isHidden: !!loc?.isHidden,
-    mapX: loc?.mapX ?? 50, mapY: loc?.mapY ?? 50,
+    mapX: loc?.mapX ?? Math.round(MAP_W / 2), mapY: loc?.mapY ?? Math.round(MAP_H / 2),
     vi: { ...(loc?.i18n?.vi || {}) }, en: { ...(loc?.i18n?.en || {}) },
     links: { ...(loc?.links || {}) },
     hist: (loc?.history || []).map((h: any) => `${h.year} | ${h.content}`).join('\n'),
@@ -287,32 +329,58 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
   );
 }
 
+// Đặt pin trên CHÍNH bản đồ vẽ tay của public (hệ toạ độ 1250 x 1070).
+// Bấm hoặc kéo-thả pin; toạ độ lưu khớp tuyệt đối với CampusMap → không lệch.
 function PinPlacer({ x, y, onChange }: any) {
-  const [bg, setBg] = useState<string>(() => localStorage.getItem('bk360_bg') || '');
-  const pickBg = () => {
-    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
-    inp.onchange = () => {
-      const file = inp.files?.[0]; if (!file) return;
-      const rd = new FileReader();
-      rd.onload = (ev: any) => { const u = ev.target.result; setBg(u); try { localStorage.setItem('bk360_bg', u); } catch {} };
-      rd.readAsDataURL(file);
-    };
-    inp.click();
+  const svgRef = useRef<SVGSVGElement>(null);
+  const [drag, setDrag] = useState(false);
+
+  const toMap = (clientX: number, clientY: number) => {
+    const svg = svgRef.current; if (!svg) return null;
+    const r = svg.getBoundingClientRect();
+    // preserveAspectRatio xMidYMid meet: tính vùng vẽ thực (letterbox) để map đúng tỉ lệ.
+    const scale = Math.min(r.width / MAP_W, r.height / MAP_H);
+    const dw = MAP_W * scale, dh = MAP_H * scale;
+    const ox = (r.width - dw) / 2, oy = (r.height - dh) / 2;
+    const mx = (clientX - r.left - ox) / scale;
+    const my = (clientY - r.top - oy) / scale;
+    return { mx: Math.max(0, Math.min(MAP_W, Math.round(mx))), my: Math.max(0, Math.min(MAP_H, Math.round(my))) };
   };
-  const onClick = (e: any) => {
-    const r = e.currentTarget.getBoundingClientRect();
-    onChange(+(((e.clientX - r.left) / r.width) * 100).toFixed(1), +(((e.clientY - r.top) / r.height) * 100).toFixed(1));
+  const place = (e: any) => {
+    const pt = 'touches' in e && e.touches[0] ? e.touches[0] : e;
+    const p = toMap(pt.clientX, pt.clientY); if (p) onChange(p.mx, p.my);
   };
+
   return (
     <>
-      <p className="muted">Bấm lên ảnh nền để đặt vị trí hotspot (toạ độ %). <button className="asec" type="button" onClick={pickBg}>🖼️ Đổi ảnh nền</button></p>
-      <div className="pinbox" onClick={onClick} style={bg ? { backgroundImage: `url(${bg})` } : {}}>
-        {!bg && <div className="pinbox-ph">Chưa có ảnh nền — bấm "Đổi ảnh nền"</div>}
-        <div className="pin-edit" style={{ left: x + '%', top: y + '%' }} />
+      <p className="muted">Bấm lên bản đồ (hoặc <b>kéo pin 📍</b>) để đặt vị trí. Toạ độ khớp với bản đồ người xem.</p>
+      <div className="pinmap">
+        <svg
+          ref={svgRef}
+          viewBox={`0 0 ${MAP_W} ${MAP_H}`}
+          preserveAspectRatio="xMidYMid meet"
+          onMouseDown={(e) => { setDrag(true); place(e); }}
+          onMouseMove={(e) => drag && place(e)}
+          onMouseUp={() => setDrag(false)}
+          onMouseLeave={() => setDrag(false)}
+          onTouchStart={place}
+          onTouchMove={place}
+          style={{ width: '100%', height: 'auto', display: 'block', touchAction: 'none', cursor: 'crosshair', background: '#bcd49a', borderRadius: 14 }}
+        >
+          <image href={MAP_URL} x={0} y={0} width={MAP_W} height={MAP_H} />
+          <g pointerEvents="none">
+            <ellipse cx={x} cy={y + 3} rx={14} ry={5} fill="rgba(0,0,0,.25)" />
+            <path
+              d={`M ${x} ${y} C ${x - 20} ${y - 28} ${x - 17} ${y - 56} ${x} ${y - 56} C ${x + 17} ${y - 56} ${x + 20} ${y - 28} ${x} ${y} Z`}
+              fill="#c8102e" stroke="#fff" strokeWidth={4}
+            />
+            <circle cx={x} cy={y - 38} r={9} fill="#fff" />
+          </g>
+        </svg>
       </div>
       <div className="frow">
-        <div><label>map_x (%)</label><input type="number" value={x} onChange={(e) => onChange(+e.target.value, y)} /></div>
-        <div><label>map_y (%)</label><input type="number" value={y} onChange={(e) => onChange(x, +e.target.value)} /></div>
+        <div><label>map_x (0–{MAP_W})</label><input type="number" value={x} onChange={(e) => onChange(Math.max(0, Math.min(MAP_W, +e.target.value)), y)} /></div>
+        <div><label>map_y (0–{MAP_H})</label><input type="number" value={y} onChange={(e) => onChange(x, Math.max(0, Math.min(MAP_H, +e.target.value)))} /></div>
       </div>
     </>
   );
@@ -366,6 +434,64 @@ function CampaignEditor({ camp, onClose, onSaved }: any) {
       </div>
     </div>
   );
+}
+
+/* ===================== TEMPLATE EXCEL ===================== */
+// Sinh file mẫu khớp đúng tên sheet/cột mà bộ Import đọc (header ở dòng 2).
+function downloadTemplate() {
+  const sheet = (rows: any[][]) => XLSX.utils.aoa_to_sheet(rows);
+  const wb = XLSX.utils.book_new();
+
+  const huongDan = sheet([
+    ['BK360 — Template nhập liệu (đội Media)'],
+    [''],
+    ['Cách dùng:'],
+    ['1) Mỗi sheet là một loại dữ liệu. KHÔNG đổi tên sheet và KHÔNG đổi dòng tiêu đề (dòng 2).'],
+    ['2) Điền dữ liệu từ dòng 3 trở đi.'],
+    ['3) Link ảnh/audio: dán link CHIA SẺ Google Drive hoặc OneDrive (đặt quyền "Ai có link đều xem"). Hệ thống tự chuyển sang link nhúng.'],
+    ['4) Toạ độ map_x / map_y: vị trí trên bản đồ, hệ 0–1250 (ngang) và 0–1070 (dọc). Có thể bỏ trống rồi chỉnh bằng cách kéo pin trong trang Quản trị.'],
+    ['5) Cột "hien": Có/Không (ẩn–hiện). Cột "bat" (sự kiện): Có/Không. Cột "live"/"dang_dien_ra": Có/Không.'],
+    [''],
+    ['Sheet DiaDiem: thông tin từng toà nhà/địa điểm.'],
+    ['Sheet LichSu: dòng thời gian (nhiều dòng cho 1 địa điểm, nối qua dia_diem_id).'],
+    ['Sheet SuKien: các sự kiện (vd 70 năm, khai giảng).'],
+    ['Sheet LichTrinh: lịch trình của từng sự kiện (nối qua su_kien_id).'],
+  ]);
+
+  const diaDiem = sheet([
+    ['Mã', 'Loại spot/event', 'Toạ độ X (0-1250)', 'Toạ độ Y (0-1070)', 'Hiện?', 'Tên (VI)', 'Nhãn ngắn', 'Năm/chú thích', 'Mô tả (VI)', 'Thuyết minh (VI)', 'Tên (EN)', 'Mô tả (EN)', 'Link ảnh Xưa', 'Link ảnh Nay', 'Link ảnh 360', 'Link audio'],
+    ['id', 'loai', 'map_x', 'map_y', 'hien', 'ten_vi', 'nhan_ngan', 'nam', 'mo_ta_vi', 'thuyet_minh_vi', 'ten_en', 'mo_ta_en', 'link_anh_xua', 'link_anh_nay', 'link_anh_360', 'link_audio'],
+    ['c1', 'spot', 427, 305, 'Có', 'Tòa nhà C1', 'Nhà điều hành', 'Khu trung tâm', 'Khu nhà C1 là trung tâm khuôn viên…', 'Tòa nhà C1 là khu trung tâm lịch sử của Bách Khoa.', 'Building C1', 'Central admin block', '', '', '', ''],
+    ['library', 'spot', 647, 715, 'Có', 'Thư viện Tạ Quang Bửu', 'Thư viện', 'Khánh thành 2006', 'Thư viện 10 tầng, trung tâm tri thức…', 'Chào mừng đến Thư viện Tạ Quang Bửu.', 'Ta Quang Buu Library', '', '', '', '', ''],
+  ]);
+
+  const lichSu = sheet([
+    ['Mã địa điểm', 'Thứ tự', 'Năm', 'Nội dung'],
+    ['dia_diem_id', 'thu_tu', 'nam', 'noi_dung'],
+    ['c1', 1, '1956', 'Khu nhà học đầu tiên phục vụ khóa sinh viên kỹ thuật đầu tiên.'],
+    ['c1', 2, '2022', 'Chuyển thành Đại học Bách khoa Hà Nội.'],
+  ]);
+
+  const suKien = sheet([
+    ['Mã', 'Icon', 'Bật?', 'Tên (VI)', 'Tên (EN)'],
+    ['id', 'icon', 'bat', 'ten_vi', 'ten_en'],
+    ['anniv70', '⭐', 'Có', 'Sự kiện 70 năm', '70th Anniversary'],
+    ['khaigiang', '🎓', 'Không', 'Lễ khai giảng', 'Opening Ceremony'],
+  ]);
+
+  const lichTrinh = sheet([
+    ['Mã sự kiện', 'Giờ', 'Mã địa điểm', 'Đang diễn ra?', 'Tiêu đề (VI)', 'Tiêu đề (EN)'],
+    ['su_kien_id', 'gio', 'dia_diem_id', 'dang_dien_ra', 'tieu_de_vi', 'tieu_de_en'],
+    ['anniv70', '08:00', 'stadium', 'Có', 'Lễ khai mạc 70 năm', 'Opening'],
+    ['anniv70', '09:30', 'library', 'Không', 'Triển lãm Xưa & Nay', 'Exhibition'],
+  ]);
+
+  XLSX.utils.book_append_sheet(wb, huongDan, 'HuongDan');
+  XLSX.utils.book_append_sheet(wb, diaDiem, 'DiaDiem');
+  XLSX.utils.book_append_sheet(wb, lichSu, 'LichSu');
+  XLSX.utils.book_append_sheet(wb, suKien, 'SuKien');
+  XLSX.utils.book_append_sheet(wb, lichTrinh, 'LichTrinh');
+  XLSX.writeFile(wb, 'BK360-Template.xlsx');
 }
 
 /* ===================== IMPORT ===================== */
@@ -423,8 +549,15 @@ function ImportPanel({ locs, reload }: any) {
 
   return (
     <div className="adm-body">
+      <div className="adm-card" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
+        <div style={{ flex: 1, minWidth: 200 }}>
+          <b>Bước 1 — Tải file mẫu</b>
+          <p className="muted" style={{ margin: '4px 0 0' }}>Gửi cho đội nội dung điền. Giữ nguyên tên sheet & dòng tiêu đề.</p>
+        </div>
+        <button className="aprim" onClick={downloadTemplate}>⬇️ Tải template Excel</button>
+      </div>
       <div className="dropzone" onClick={() => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx,.xls'; i.onchange = () => i.files?.[0] && parse(i.files[0]); i.click(); }}>
-        📥 Bấm để chọn file <b>BK360-data.xlsx</b> (Import hàng loạt)
+        📥 <b>Bước 2</b> — Bấm để chọn file Excel đã điền (Import hàng loạt)
       </div>
       {preview && (
         <div className="adm-card">
@@ -434,6 +567,94 @@ function ImportPanel({ locs, reload }: any) {
         </div>
       )}
       {log && <div className="adm-card">{log}</div>}
+    </div>
+  );
+}
+
+/* ===================== USERS (chỉ SUPERADMIN) ===================== */
+const ROLE_LABEL: Record<string, string> = { SUPERADMIN: 'Quản trị cao nhất', EDITOR: 'Biên tập (đội media)', VIEWER: 'Chỉ xem' };
+
+function UsersPanel({ meId }: { meId?: string }) {
+  const [users, setUsers] = useState<User[]>([]);
+  const [edit, setEdit] = useState<User | 'new' | null>(null);
+  const [msg, setMsg] = useState('');
+  const load = async () => { try { setUsers(await api.adminUsers()); } catch (e: any) { setMsg(e.message); } };
+  useEffect(() => { load(); }, []);
+
+  const del = async (u: User) => {
+    if (!confirm(`Xoá tài khoản ${u.email}?`)) return;
+    try { await api.deleteUser(u.id!); setMsg('Đã xoá ✓'); load(); } catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+
+  return (
+    <div className="adm-body">
+      <div className="adm-card" style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ flex: 1 }}>
+          <b>Tài khoản truy cập</b>
+          <p className="muted" style={{ margin: '4px 0 0' }}>Tạo tài khoản <b>Biên tập</b> cho đội media để cùng nhập nội dung.</p>
+        </div>
+        <button className="aprim" onClick={() => setEdit('new')}>+ Thêm tài khoản</button>
+      </div>
+      {msg && <div className="adm-card">{msg}</div>}
+      <div className="user-list">
+        {users.map((u) => (
+          <div className="arow" key={u.id}>
+            <div className="arow-main">
+              <b>{u.name || u.email} {u.id === meId && <span className="miss-tag">bạn</span>}</b>
+              <span>{u.email} · {ROLE_LABEL[u.role] || u.role}</span>
+            </div>
+            <button className="aic" onClick={() => setEdit(u)}>✏️</button>
+            {u.id !== meId && <button className="aic" onClick={() => del(u)}>🗑</button>}
+          </div>
+        ))}
+      </div>
+      {edit && (
+        <UserEditor
+          user={edit === 'new' ? null : edit}
+          onClose={() => setEdit(null)}
+          onSaved={() => { setEdit(null); setMsg('Đã lưu ✓'); load(); }}
+        />
+      )}
+    </div>
+  );
+}
+
+function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: () => void; onSaved: () => void }) {
+  const [email, setEmail] = useState(user?.email || '');
+  const [name, setName] = useState(user?.name || '');
+  const [role, setRole] = useState(user?.role || 'EDITOR');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState('');
+  const save = async () => {
+    try {
+      if (user) await api.updateUser(user.id!, { name, role, ...(password ? { password } : {}) });
+      else {
+        if (!email.trim() || password.length < 6) { setErr('Cần email và mật khẩu ≥ 6 ký tự.'); return; }
+        await api.createUser({ email: email.trim(), password, name, role });
+      }
+      onSaved();
+    } catch (e: any) { setErr(e.message); }
+  };
+  return (
+    <div className="admin-modal open" onClick={(e: any) => e.target === e.currentTarget && onClose()}>
+      <div className="am-card">
+        <span className="am-cls" onClick={onClose}>×</span>
+        <h3 className="am-ttl">{user ? 'Sửa tài khoản' : 'Thêm tài khoản'}</h3>
+        <label>Email</label>
+        <input value={email} disabled={!!user} onChange={(e) => setEmail(e.target.value)} placeholder="vd: media@bk360.local" />
+        <label>Tên hiển thị</label>
+        <input value={name} onChange={(e) => setName(e.target.value)} placeholder="vd: Nguyễn Văn A" />
+        <label>Vai trò</label>
+        <select value={role} onChange={(e) => setRole(e.target.value)}>
+          <option value="EDITOR">Biên tập (đội media)</option>
+          <option value="VIEWER">Chỉ xem</option>
+          <option value="SUPERADMIN">Quản trị cao nhất</option>
+        </select>
+        <label>{user ? 'Đặt lại mật khẩu (bỏ trống nếu giữ nguyên)' : 'Mật khẩu (≥ 6 ký tự)'}</label>
+        <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
+        {err && <div className="err">{err}</div>}
+        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+      </div>
     </div>
   );
 }

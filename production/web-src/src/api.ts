@@ -90,5 +90,13 @@ export const api = {
   },
   deleteMedia: (id: string) => req(`/admin/media/${id}`, { method: 'DELETE' }),
 
-  audit: (limit = 100) => req(`/admin/audit?limit=${limit}`),
+  // users (chỉ SUPERADMIN)
+  adminUsers: () => req<User[]>('/admin/users'),
+  createUser: (d: { email: string; password: string; name?: string; role?: string }) =>
+    req('/admin/users', { method: 'POST', body: JSON.stringify(d) }),
+  updateUser: (id: string, d: { name?: string; role?: string; password?: string }) =>
+    req(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
+  deleteUser: (id: string) => req(`/admin/users/${id}`, { method: 'DELETE' }),
+
+  audit: (limit = 100) => req<any[]>(`/admin/audit?limit=${limit}`),
 };
