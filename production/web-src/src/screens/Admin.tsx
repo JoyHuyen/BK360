@@ -81,7 +81,8 @@ const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: st
   {
     title: 'Hệ thống',
     items: [
-      { id: 'import', icon: 'upload', label: 'Nhập liệu' },
+      // Tạm ẩn Nhập liệu (bật lại: bỏ comment dòng dưới)
+      // { id: 'import', icon: 'upload', label: 'Nhập liệu' },
       { id: 'users', icon: 'users', label: 'Người dùng', super: true },
     ],
   },
