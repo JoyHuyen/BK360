@@ -42,6 +42,14 @@ const NAVS = [
 ];
 const NAV_USERS = { id: 'users', icon: '👥', label: 'Người dùng' };
 
+// Tỉ lệ khung khuyến nghị theo loại ảnh (để CẢNH BÁO khi lệch — không chặn).
+const RATIO_EXP: Record<string, { r: number; label: string }> = {
+  old: { r: 16 / 10, label: '16:10' },
+  now: { r: 16 / 10, label: '16:10' },
+  pano360: { r: 2 / 1, label: '2:1' },
+};
+const RATIO_TOL = 0.12; // sai số ±12%
+
 export default function Admin(props: {
   lang: Lang;
   user: User | null;
@@ -230,6 +238,20 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
     hist: (loc?.history || []).map((h: any) => `${h.year} | ${h.content}`).join('\n'),
   }));
   const [msg, setMsg] = useState('');
+  const [aspectWarn, setAspectWarn] = useState<Record<string, string>>({});
+  // Kiểm tra tỉ lệ ảnh khi load — chỉ CẢNH BÁO, không chặn lưu.
+  const checkAspect = (key: string, img: HTMLImageElement) => {
+    const exp = RATIO_EXP[key];
+    if (!exp || !img.naturalWidth || !img.naturalHeight) return;
+    const r = img.naturalWidth / img.naturalHeight;
+    const off = Math.abs(r - exp.r) / exp.r > RATIO_TOL;
+    setAspectWarn((p) => {
+      const next = { ...p };
+      if (off) next[key] = `Ảnh đang ~${(r).toFixed(2)}:1 (${img.naturalWidth}×${img.naturalHeight}) — khác tỉ lệ khuyến nghị ${exp.label}, khi hiển thị sẽ bị cắt. Vẫn dùng được, nên cân nhắc thay ảnh.`;
+      else delete next[key];
+      return next;
+    });
+  };
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
   const setVi = (k: string, v: any) => setF((p: any) => ({ ...p, vi: { ...p.vi, [k]: v } }));
   const setEn = (k: string, v: any) => setF((p: any) => ({ ...p, en: { ...p.en, [k]: v } }));
@@ -345,7 +367,8 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
                   <button className="asec" type="button" title="Tải file từ máy lên server (được tối ưu tự động)" onClick={() => uploadFile(mk as string, key as string)}>Tải file</button>
                 </div>
                 <div className="field-hint">{hint}</div>
-                {f.links[key] && kind === 'image' && <img className="media-prev" src={f.links[key]} alt="" onError={(e: any) => (e.target.style.opacity = 0.25)} />}
+                {f.links[key] && aspectWarn[key] && <div className="aspect-warn">⚠️ {aspectWarn[key]}</div>}
+                {f.links[key] && kind === 'image' && <img className="media-prev" src={f.links[key]} alt="" onLoad={(e: any) => checkAspect(key as string, e.target)} onError={(e: any) => (e.target.style.opacity = 0.25)} />}
                 {f.links[key] && kind === 'audio' && <audio controls src={f.links[key]} style={{ width: '100%', marginTop: 6 }} />}
               </div>
             ))}
