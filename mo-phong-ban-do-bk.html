@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Mô phỏng Bản đồ Bách Khoa Hà Nội</title>
+<style>
+  :root{--ground:#d7dce3;--out:#c2aaa6;--road:#565d66;--tan:#e4d9b6;--tanline:#6f5d3a;
+    --navy:#37475a;--blue:#5a86a8;--rose:#b08a93;--green:#8fbf6e;--field:#6fae4e;--lake:#48c2d4;--gold:#f5b301;--red:#9e1b32;}
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{font-family:"Segoe UI",system-ui,Arial,sans-serif;background:#aeb6c0;color:#2a3242;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+  header{width:100%;background:#cdd3db;text-align:center;padding:10px}
+  header h1{font-size:26px;letter-spacing:4px;color:#5a4a3a;font-weight:800}
+  .wrap{width:100%;max-width:1100px;padding:8px}
+  svg{width:100%;height:auto;display:block;background:var(--ground);border-radius:6px;box-shadow:0 6px 24px rgba(0,0,0,.25)}
+  /* buildings */
+  .bld{cursor:pointer}
+  .bld rect,.bld polygon{transition:filter .12s}
+  .bld:hover rect,.bld:hover polygon{filter:brightness(1.12)}
+  .b-tan{fill:var(--tan);stroke:var(--tanline);stroke-width:2.5}
+  .b-navy{fill:var(--navy);stroke:#26323f;stroke-width:2.5}
+  .b-blue{fill:var(--blue);stroke:#3c5f7d;stroke-width:2.5}
+  .b-rose{fill:var(--rose);stroke:#8a6670;stroke-width:2.5}
+  .lab{font-size:13px;font-weight:800;fill:#2a2f3a;text-anchor:middle;dominant-baseline:middle;paint-order:stroke;stroke:#fff;stroke-width:3px;pointer-events:none}
+  .lab.w{fill:#fff;stroke:none}
+  .road{fill:none;stroke:var(--road);stroke-linecap:square}
+  .rdash{fill:none;stroke:#cdd3db;stroke-width:2;stroke-dasharray:14 12}
+  .rlab{fill:#e9edf2;font-size:13px;font-weight:700;letter-spacing:1px}
+  .rlab.d{fill:#2a3242}
+  .tree-c{fill:#6fa860}.tree-s{fill:rgba(0,0,0,.12)}
+  .panelbar{margin:6px;padding:10px 16px;background:#cdd3db;border-radius:10px;font-size:14px;min-height:20px;width:calc(100% - 12px);max-width:1088px}
+  .panelbar b{color:var(--red)}
+  footer{font-size:12px;color:#5a6472;padding:6px 0 16px;text-align:center}
+</style>
+</head>
+<body>
+<header><h1>BẢN ĐỒ BÁCH KHOA</h1></header>
+<div class="panelbar" id="bar">Chạm vào một toà nhà để xem tên · <i>Mô phỏng theo bản đồ chính thức HUST</i></div>
+<div class="wrap">
+<svg id="map" viewBox="0 0 1250 1070" preserveAspectRatio="xMidYMid meet">
+  <!-- ===== nền & khu ngoài ===== -->
+  <rect x="0" y="0" width="1250" height="1070" fill="var(--ground)"/>
+  <!-- khu lân cận (ngoài campus) phía trên-phải, qua đường Trần Đại Nghĩa -->
+  <polygon points="600,112 1250,112 1250,640 770,560" fill="var(--out)"/>
+  <!-- góc dưới-phải ngoài (qua Lê Thanh Nghị) -->
+  <polygon points="1250,720 1250,1070 470,1070" fill="#bfc6cf"/>
+
+  <!-- ===== ĐƯỜNG ===== -->
+  <!-- Đại Cồ Việt (trên) -->
+  <line class="road" x1="0" y1="92" x2="1250" y2="92" stroke-width="42"/>
+  <line class="rdash" x1="0" y1="92" x2="1250" y2="92"/>
+  <text class="rlab" x="980" y="78">ĐƯỜNG ĐẠI CỒ VIỆT</text>
+  <!-- Giải Phóng (trái) -->
+  <line class="road" x1="55" y1="112" x2="55" y2="660" stroke-width="36"/>
+  <line class="rdash" x1="55" y1="112" x2="55" y2="660"/>
+  <text class="rlab" x="42" y="430" transform="rotate(-90 42 430)">ĐƯỜNG GIẢI PHÓNG</text>
+  <!-- Trần Đại Nghĩa (phải, chéo) -->
+  <line class="road" x1="765" y1="545" x2="985" y2="990" stroke-width="40"/>
+  <text class="rlab" x="835" y="690" transform="rotate(63 835 690)">ĐƯỜNG TRẦN ĐẠI NGHĨA</text>
+  <!-- Lê Thanh Nghị (dưới, chéo) -->
+  <line class="road" x1="250" y1="1010" x2="1010" y2="690" stroke-width="40"/>
+  <text class="rlab" x="430" y="945" transform="rotate(-23 430 945)">ĐƯỜNG LÊ THANH NGHỊ</text>
+  <!-- Tạ Quang Bửu (nội khu, chéo) -->
+  <line class="road" x1="820" y1="660" x2="1015" y2="320" stroke-width="26"/>
+  <text class="rlab d" x="905" y="500" transform="rotate(-60 905 500)">Đường Tạ Quang Bửu</text>
+
+  <!-- ===== KHÔNG GIAN XANH & SÂN TRONG ===== -->
+  <!-- sân trong + đài phun -->
+  <rect x="315" y="300" width="210" height="250" rx="6" fill="#cdd3db"/>
+  <g>
+    <rect x="330" y="312" width="84" height="108" rx="4" fill="var(--green)"/>
+    <rect x="426" y="312" width="84" height="108" rx="4" fill="var(--green)"/>
+    <rect x="330" y="430" width="84" height="108" rx="4" fill="var(--green)"/>
+    <rect x="426" y="430" width="84" height="108" rx="4" fill="var(--green)"/>
+    <circle cx="420" cy="425" r="26" fill="#bfe0ee"/><circle cx="420" cy="425" r="15" fill="#7fc4dd"/><circle cx="420" cy="425" r="6" fill="#3aa6c8"/>
+  </g>
+
+  <!-- Hồ Tiền -->
+  <rect x="150" y="690" width="180" height="150" rx="26" fill="#c9ccc0"/>
+  <rect x="160" y="700" width="160" height="130" rx="20" fill="var(--lake)"/>
+  <text class="lab" x="240" y="765">Hồ Tiền</text>
+
+  <!-- Sân bóng đá -->
+  <g transform="rotate(-23 1080 870)">
+    <rect x="965" y="770" width="230" height="200" rx="6" fill="var(--field)" stroke="#fff" stroke-width="3"/>
+    <line x1="1080" y1="770" x2="1080" y2="970" stroke="#fff" stroke-width="2.5"/>
+    <circle cx="1080" cy="870" r="28" fill="none" stroke="#fff" stroke-width="2.5"/>
+    <rect x="965" y="835" width="34" height="70" fill="none" stroke="#fff" stroke-width="2.5"/>
+    <rect x="1161" y="835" width="34" height="70" fill="none" stroke="#fff" stroke-width="2.5"/>
+  </g>
+
+  <!-- Bể bơi -->
+  <g transform="rotate(-23 855 800)" class="bld" data-name="Bể bơi">
+    <rect x="775" y="745" width="160" height="110" rx="8" fill="#bfeaf2" stroke="#9fd3df" stroke-width="3"/>
+    <rect x="787" y="757" width="136" height="86" rx="4" fill="#4cb8d8"/>
+    <line x1="787" y1="778" x2="923" y2="778" stroke="#bfeaf2" stroke-width="2"/>
+    <line x1="787" y1="800" x2="923" y2="800" stroke="#bfeaf2" stroke-width="2"/>
+    <line x1="787" y1="822" x2="923" y2="822" stroke="#bfeaf2" stroke-width="2"/>
+  </g>
+
+  <!-- ===== TOÀ NHÀ (sinh bằng JS để tương tác) ===== -->
+  <g id="buildings"></g>
+
+  <!-- ===== CÂY (sinh bằng JS) ===== -->
+  <g id="trees"></g>
+
+  <!-- ===== VĂN PHÒNG HỘI SINH VIÊN (góc trên-phải) ===== -->
+  <g transform="translate(1010,150)">
+    <text x="0" y="0" fill="#fff" font-size="15" font-weight="800">VĂN PHÒNG HỘI SV</text>
+    <text x="0" y="26" fill="#eee" font-size="12">📍 Phòng 101, KTX B8</text>
+    <text x="0" y="46" fill="#eee" font-size="12">✉ hsv@hust.edu.vn</text>
+    <rect x="0" y="60" width="150" height="86" rx="6" fill="#7fa8c4" stroke="#fff" stroke-width="2"/>
+    <text x="75" y="108" text-anchor="middle" font-size="11" fill="#fff">[ảnh Hội SV]</text>
+  </g>
+</svg>
+</div>
+<footer>Mô phỏng minh hoạ — không thay thế bản đồ chính thức. Tỉ lệ & vị trí mang tính tương đối.</footer>
+
+<script>
+// label, lớp màu, toạ độ (theo viewBox 1250x1070), tên đầy đủ (theo chú giải)
+const BUILDINGS = [
+  {x:240,y:232,w:360,h:54,cls:"b-navy",label:"C1",lw:1,name:"Nhà C1 — Khu hành chính, các phòng ban (Đào tạo, CTSV, HCTH…)"},
+  {x:198,y:305,w:56,h:215,cls:"b-rose",label:"C2",name:"Nhà C2 — Hội trường C2"},
+  {x:150,y:548,w:175,h:72,cls:"b-blue",label:"C9",name:"Nhà C9 — Viện Điện tử-Viễn thông; Viện Kinh tế & Quản lý"},
+  {x:545,y:300,w:188,h:42,cls:"b-tan",label:"C3",name:"Nhà C3"},
+  {x:545,y:378,w:188,h:42,cls:"b-tan",label:"C4",name:"Nhà C4 — Viện Kỹ thuật Hoá học; Viện CNSH & CN Thực phẩm"},
+  {x:545,y:456,w:188,h:42,cls:"b-tan",label:"C5",name:"Nhà C5 — Viện KH&KT Vật liệu; Viện Dệt may-Da giày & Thời trang"},
+  {x:575,y:545,w:170,h:50,cls:"b-tan",label:"C10",name:"Nhà C10"},
+  {x:770,y:300,w:80,h:44,cls:"b-navy",label:"C6",lw:1,name:"Nhà C6 — Viện Cơ khí động lực"},
+  {x:770,y:378,w:80,h:44,cls:"b-blue",label:"C7",lw:1,name:"Nhà C7 — Khoa học & Công nghệ Nhiệt lạnh"},
+  {x:770,y:456,w:80,h:44,cls:"b-rose",label:"B1",lw:1,name:"Nhà B1 — Viện Công nghệ Thông tin & Truyền thông"},
+  // Thư viện (tháp navy có khung trắng)
+  {x:360,y:660,w:165,h:160,cls:"b-navy",label:"Thư Viện",lw:1,frame:true,name:"Thư viện Tạ Quang Bửu"},
+  // cụm D
+  {x:600,y:638,w:120,h:46,cls:"b-tan",label:"D3",name:"Nhà D3"},
+  {x:600,y:716,w:120,h:46,cls:"b-tan",label:"D5",name:"Nhà D5"},
+  {x:330,y:840,w:235,h:54,cls:"b-tan",label:"D9",name:"Nhà D9"},
+  {x:760,y:620,w:40,h:150,cls:"b-tan",label:"D3-5",vert:true,name:"Nhà D3-5"},
+  {x:618,y:792,w:115,h:42,cls:"b-tan",label:"D7",rot:-37,name:"Nhà D7"},
+  // KTX (cụm B bên phải)
+  {x:1010,y:560,w:120,h:46,cls:"b-blue",label:"B13",name:"KTX B13"},
+  {x:1000,y:632,w:120,h:44,cls:"b-tan",label:"Trạm xá",fs:11,name:"Trạm xá"},
+  {x:1030,y:700,w:120,h:46,cls:"b-blue",label:"B4",name:"KTX B4"},
+  {x:1010,y:772,w:120,h:46,cls:"b-blue",label:"B3",name:"KTX B3"},
+  // dưới-phải
+  {x:690,y:800,w:70,h:100,cls:"b-navy",label:"TC",lw:1,name:"Nhà TC"},
+  {x:905,y:690,w:110,h:40,cls:"b-tan",label:"A17",name:"Nhà A17"},
+];
+
+const NS="http://www.w3.org/2000/svg";
+const g=document.getElementById("buildings");
+function el(t,a){const e=document.createElementNS(NS,t);for(const k in a)e.setAttribute(k,a[k]);return e;}
+
+BUILDINGS.forEach(b=>{
+  const grp=el("g",{class:"bld"}); grp.dataset.name=b.name;
+  if(b.rot) grp.setAttribute("transform",`rotate(${b.rot} ${b.x+b.w/2} ${b.y+b.h/2})`);
+  if(b.frame){ // khung trắng quanh thư viện
+    grp.appendChild(el("rect",{x:b.x-10,y:b.y-10,width:b.w+20,height:b.h+20,rx:6,fill:"#fff"}));
+  }
+  grp.appendChild(el("rect",{x:b.x,y:b.y,width:b.w,height:b.h,rx:6,class:b.cls}));
+  const cx=b.x+b.w/2, cy=b.y+b.h/2;
+  const lab=el("text",{x:cx,y:cy,class:"lab"+( (b.cls==="b-navy")?" w":"" )});
+  if(b.fs)lab.setAttribute("font-size",b.fs);
+  if(b.vert)lab.setAttribute("transform",`rotate(-90 ${cx} ${cy})`);
+  lab.textContent=b.label;
+  grp.appendChild(lab);
+  grp.addEventListener("click",()=>{document.getElementById("bar").innerHTML="<b>"+b.label+"</b> — "+ (b.name||b.label);});
+  g.appendChild(grp);
+});
+
+// cây xanh rải rác (vị trí cố định)
+const TREES=[[120,170],[180,200],[250,175],[330,160],[430,150],[150,300],[150,400],[150,480],
+  [300,300],[300,420],[300,520],[470,300],[560,640],[700,560],[760,170],[820,150],[470,640],
+  [200,640],[360,620],[640,470],[700,700],[470,860],[600,560],[850,560],[930,560],[260,860]];
+const tg=document.getElementById("trees");
+TREES.forEach(([x,y])=>{
+  tg.appendChild(el("ellipse",{cx:x,cy:y+10,rx:16,ry:7,class:"tree-s"}));
+  const c=el("circle",{cx:x,cy:y,r:14,class:"tree-c"});tg.appendChild(c);
+  tg.appendChild(el("circle",{cx:x-7,cy:y+3,r:9,class:"tree-c"}));
+  tg.appendChild(el("circle",{cx:x+7,cy:y+3,r:9,class:"tree-c"}));
+});
+</script>
+</body>
+</html>

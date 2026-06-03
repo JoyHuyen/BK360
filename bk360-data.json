@@ -1,0 +1,455 @@
+{
+  "locations": [
+    {
+      "id": "parabol",
+      "type": "event",
+      "mapX": 8,
+      "mapY": 57,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Cổng Parabol",
+          "short": "Biểu tượng",
+          "year": "Khánh thành 1965",
+          "description": "Cổng Parabol mái vòm 'ngọn sóng' — biểu tượng của Bách Khoa Hà Nội (rộng 8m, cao 12,5m).",
+          "voiceText": "Cổng Parabol là biểu tượng kiến trúc gắn liền với Bách Khoa Hà Nội."
+        },
+        "en": {
+          "name": "Parabol Gate",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": [
+        {
+          "year": "1960s",
+          "content": "Cổng Parabol hình thành trên đường Đại Cồ Việt, trở thành biểu tượng của trường."
+        }
+      ]
+    },
+    {
+      "id": "c1",
+      "type": "spot",
+      "mapX": 34,
+      "mapY": 28,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà C1 (toà trung tâm)",
+          "short": "Trung tâm",
+          "year": "Số 1 Đại Cồ Việt",
+          "description": "Toà nhà trung tâm với tháp lam chắn nắng, mái 'ngọn sóng' trên đỉnh và logo BK; phía trước là Quảng trường C1 (I ❤ BK).",
+          "voiceText": "Toà nhà C1 — trung tâm hành chính của trường."
+        },
+        "en": {
+          "name": "Building C1",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": "https://drive.google.com/thumbnail?id=XUA_FILE_ID&sz=w2000",
+        "now": "https://drive.google.com/thumbnail?id=NAY_FILE_ID&sz=w2000",
+        "pano360": "https://drive.google.com/thumbnail?id=PANO_FILE_ID&sz=w2000",
+        "audio": "https://drive.google.com/uc?export=download&id=AUDIO_FILE_ID"
+      },
+      "history": [
+        {
+          "year": "1956",
+          "content": "Trường ĐH Bách khoa Hà Nội thành lập (06/3/1956) — trường kỹ thuật đầu tiên của Việt Nam."
+        },
+        {
+          "year": "2022",
+          "content": "Chuyển thành Đại học Bách khoa Hà Nội (mô hình đại học có trường thành viên)."
+        }
+      ]
+    },
+    {
+      "id": "c2",
+      "type": "spot",
+      "mapX": 20,
+      "mapY": 42,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Hội trường C2",
+          "short": "Hội trường",
+          "year": "Trường Vật liệu / Điện-ĐT / CNTT&TT",
+          "description": "Hội trường C2 — nơi tổ chức sự kiện, hội thảo; khu các trường Vật liệu, Điện-Điện tử, CNTT&TT.",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "C2 Hall",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "c7",
+      "type": "spot",
+      "mapX": 62,
+      "mapY": 50,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà C7",
+          "short": "Khối chữ E",
+          "year": "Viện KT&QL; Vật lý KT; KH&CN GD; Ngoại ngữ",
+          "description": "Toà C7 hình chữ E — Viện Kinh tế & Quản lý (109), Vật lý Kỹ thuật (111), KH&CN Giáo dục (218), Ngoại ngữ (M317).",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Building C7",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "library",
+      "type": "spot",
+      "mapX": 52,
+      "mapY": 67,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Thư viện Tạ Quang Bửu",
+          "short": "Thư viện",
+          "year": "Trung tâm tri thức",
+          "description": "Thư viện Tạ Quang Bửu — khối nhà nhiều tầng có đồng hồ mặt tiền, trung tâm tri thức của trường.",
+          "voiceText": "Thư viện Tạ Quang Bửu — trái tim tri thức của Bách Khoa."
+        },
+        "en": {
+          "name": "Ta Quang Buu Library",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": "https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL2kvcyFBYmNYdWFFeGFtcGxl/root/content",
+        "now": "https://api.onedrive.com/v1.0/shares/u!aHR0cHM6Ly8xZHJ2Lm1zL2kvcyFBYmNOYXlFeGFtcGxl/root/content",
+        "pano360": null,
+        "audio": null
+      },
+      "history": [
+        {
+          "year": "1956",
+          "content": "Tủ sách kỹ thuật phục vụ giảng dạy từ những ngày đầu."
+        },
+        {
+          "year": "2006",
+          "content": "Tòa thư viện hiện đại khánh thành, mang tên GS. Tạ Quang Bửu."
+        },
+        {
+          "year": "2020",
+          "content": "Số hóa kho học liệu, phát triển không gian học tập sáng tạo."
+        }
+      ]
+    },
+    {
+      "id": "b1",
+      "type": "spot",
+      "mapX": 78,
+      "mapY": 67,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà B1",
+          "short": "Trường Hoá",
+          "year": "Trường Hoá & Khoa học Sự sống",
+          "description": "Toà B1 — tháp cao mặt kính, sảnh kính tròn phía trước; Trường Hoá và Khoa học Sự sống.",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Building B1",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "c9",
+      "type": "spot",
+      "mapX": 24,
+      "mapY": 54,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà C9",
+          "short": "Toà C9",
+          "year": "",
+          "description": "",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Building C9",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "c10",
+      "type": "spot",
+      "mapX": 51,
+      "mapY": 54,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà C10 (ITIMS)",
+          "short": "ITIMS",
+          "year": "",
+          "description": "",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Building C10",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "b5",
+      "type": "spot",
+      "mapX": 88,
+      "mapY": 37,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "KTX B5",
+          "short": "Ký túc xá",
+          "year": "",
+          "description": "",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Dorm B5",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "b9",
+      "type": "spot",
+      "mapX": 88,
+      "mapY": 45,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "KTX B9",
+          "short": "Ký túc xá",
+          "year": "",
+          "description": "",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Dorm B9",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "d2a",
+      "type": "spot",
+      "mapX": 18,
+      "mapY": 64,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Nhà D2A",
+          "short": "Toà D2A",
+          "year": "",
+          "description": "",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Building D2A",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    },
+    {
+      "id": "vietduc",
+      "type": "spot",
+      "mapX": 34,
+      "mapY": 64,
+      "hidden": false,
+      "i18n": {
+        "vi": {
+          "name": "Trung tâm Việt-Đức",
+          "short": "TT Việt-Đức",
+          "year": "Khoa Toán-Tin",
+          "description": "Trung tâm Việt-Đức / Khoa Toán-Tin.",
+          "voiceText": ""
+        },
+        "en": {
+          "name": "Vietnam-Germany Center",
+          "description": ""
+        }
+      },
+      "media": {
+        "old": null,
+        "now": null,
+        "pano360": null,
+        "audio": null
+      },
+      "history": []
+    }
+  ],
+  "campaigns": [
+    {
+      "id": "anniv70",
+      "icon": "⭐",
+      "enabled": true,
+      "i18n": {
+        "vi": {
+          "name": "Sự kiện 70 năm"
+        },
+        "en": {
+          "name": "70th Anniversary"
+        }
+      },
+      "schedule": [
+        {
+          "time": "08:00",
+          "loc": "stadium",
+          "live": true,
+          "title": {
+            "vi": "Lễ khai mạc 70 năm",
+            "en": "70th opening ceremony"
+          }
+        },
+        {
+          "time": "09:30",
+          "loc": "library",
+          "live": true,
+          "title": {
+            "vi": "Triển lãm \"Xưa & Nay\"",
+            "en": "Then & Now exhibition"
+          }
+        },
+        {
+          "time": "10:30",
+          "loc": "c2",
+          "live": false,
+          "title": {
+            "vi": "Tọa đàm cựu sinh viên",
+            "en": "Alumni talk"
+          }
+        },
+        {
+          "time": "14:00",
+          "loc": "c1",
+          "live": false,
+          "title": {
+            "vi": "Tham quan phòng truyền thống",
+            "en": "Tradition room tour"
+          }
+        },
+        {
+          "time": "19:30",
+          "loc": "stadium",
+          "live": false,
+          "title": {
+            "vi": "Đêm Gala hội ngộ",
+            "en": "Gala night"
+          }
+        }
+      ]
+    },
+    {
+      "id": "homecoming",
+      "icon": "🎓",
+      "enabled": false,
+      "i18n": {
+        "vi": {
+          "name": "BK – Ngày trở về"
+        },
+        "en": {
+          "name": "BK Homecoming"
+        }
+      },
+      "schedule": [
+        {
+          "time": "08:30",
+          "loc": "parabol",
+          "live": false,
+          "title": {
+            "vi": "Đón tiếp cựu sinh viên",
+            "en": "Alumni welcome"
+          }
+        }
+      ]
+    },
+    {
+      "id": "khaigiang",
+      "icon": "🎉",
+      "enabled": false,
+      "i18n": {
+        "vi": {
+          "name": "Lễ Khai giảng"
+        },
+        "en": {
+          "name": "Opening Ceremony"
+        }
+      },
+      "schedule": []
+    }
+  ]
+}

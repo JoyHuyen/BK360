@@ -1,0 +1,14 @@
+THƯ MỤC NHẬN FILE — BK360 2D MAP
+=================================
+Thả 2 (hoặc 3) thứ vào ĐÚNG thư mục "input/" này:
+
+1) FILE EXCEL đã điền  →  đặt tên:  BK360-data.xlsx
+2) ẢNH NỀN 2D map      →  đặt tên:  map.jpg   (hoặc map.png)
+3) (tuỳ chọn) ảnh/audio nếu KHÔNG dùng link Drive/OneDrive → bỏ vào input/assets/
+
+Sau đó nhắn cho trợ lý: "đã copy xong, chạy giúp".
+Trợ lý sẽ chạy loader → sinh bk360-data.json → 2D map hiển thị.
+
+Lưu ý:
+- Nếu dùng link Google Drive/OneDrive trong Excel: nhớ đặt quyền "Anyone with the link".
+- Tên file Excel nên đúng "BK360-data.xlsx" cho nhanh (tên khác cũng được, báo mình tên).

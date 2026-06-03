@@ -1,0 +1,439 @@
+import { useEffect, useState } from 'react';
+import * as XLSX from 'xlsx';
+import { api, setToken } from '../api';
+import type { Lang, Location, Campaign, User } from '../types';
+
+/* ---------- helpers: chuẩn hoá link Drive/OneDrive ---------- */
+function driveId(u: string) {
+  const m = u.match(/\/file\/d\/([\w-]+)/) || u.match(/[?&]id=([\w-]+)/);
+  return m ? m[1] : null;
+}
+function normalize(v: any, kind: 'image' | 'audio') {
+  const u = (v == null ? '' : String(v)).trim();
+  if (!u) return '';
+  const low = u.toLowerCase();
+  if (low.includes('drive.google.com') || low.includes('docs.google.com')) {
+    const id = driveId(u);
+    if (id)
+      return kind === 'image'
+        ? `https://drive.google.com/thumbnail?id=${id}&sz=w2000`
+        : `https://drive.google.com/uc?export=download&id=${id}`;
+    return u;
+  }
+  if (low.includes('1drv.ms') || low.includes('onedrive.live.com') || low.includes('sharepoint.com')) {
+    const enc = btoa(unescape(encodeURIComponent(u))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    return `https://api.onedrive.com/v1.0/shares/u!${enc}/root/content`;
+  }
+  return u;
+}
+const yes = (v: any) => ['có', 'co', 'yes', 'x', '1', 'true'].includes(String(v == null ? '' : v).trim().toLowerCase());
+
+const NAVS = [
+  { id: 'overview', icon: '🏠', label: 'Tổng quan' },
+  { id: 'locations', icon: '📍', label: 'Địa điểm' },
+  { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
+  { id: 'import', icon: '📥', label: 'Nhập liệu' },
+];
+
+export default function Admin(props: {
+  lang: Lang;
+  user: User | null;
+  setUser: (u: User | null) => void;
+  onBack: () => void;
+  reloadPublic: () => void;
+}) {
+  if (!props.user) return <Login onLogin={props.setUser} onBack={props.onBack} />;
+  return <Dashboard {...props} user={props.user} />;
+}
+
+/* ===================== LOGIN ===================== */
+function Login({ onLogin, onBack }: { onLogin: (u: User) => void; onBack: () => void }) {
+  const [email, setEmail] = useState('admin@bk360.local');
+  const [password, setPassword] = useState('');
+  const [err, setErr] = useState('');
+  const submit = async () => {
+    try {
+      const r = await api.login(email, password);
+      setToken(r.accessToken);
+      onLogin(r.user);
+    } catch (e: any) {
+      setErr(e.message || 'Đăng nhập thất bại');
+    }
+  };
+  return (
+    <div className="screen show login-screen">
+      <div className="login-card">
+        <h3>🔒 Đăng nhập quản trị BK360</h3>
+        <input placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} />
+        <input type="password" placeholder="Mật khẩu" value={password}
+          onChange={(e) => setPassword(e.target.value)} onKeyDown={(e) => e.key === 'Enter' && submit()} />
+        {err && <div className="err">{err}</div>}
+        <div className="am-acts">
+          <button className="aprim" onClick={submit}>Đăng nhập</button>
+          <button className="asec" onClick={onBack}>Huỷ</button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== DASHBOARD ===================== */
+function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
+  const [nav, setNav] = useState('locations');
+  const [locs, setLocs] = useState<Location[]>([]);
+  const [camps, setCamps] = useState<Campaign[]>([]);
+  const reload = async () => {
+    setLocs(await api.adminLocations());
+    setCamps(await api.adminCampaigns());
+    reloadPublic();
+  };
+  useEffect(() => { reload(); }, []);
+  const logout = async () => { await api.logout().catch(() => {}); setToken(null); setUser(null); onBack(); };
+  const label = NAVS.find((n) => n.id === nav)?.label || '';
+
+  return (
+    <div className="adm-shell">
+      <aside className="adm-side">
+        <div className="adm-brand">BK360 · Quản trị</div>
+        {NAVS.map((n) => (
+          <button key={n.id} className={nav === n.id ? 'on' : ''} onClick={() => setNav(n.id)}>
+            <span>{n.icon}</span> {n.label}
+          </button>
+        ))}
+        <div className="adm-spacer" />
+        <button onClick={onBack}>↩ Về trang xem</button>
+        <button onClick={logout}>Đăng xuất</button>
+      </aside>
+      <main className="adm-main">
+        <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
+        {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
+        {nav === 'locations' && <LocationsPanel locs={locs} reload={reload} />}
+        {nav === 'campaigns' && <CampaignsPanel camps={camps} locs={locs} reload={reload} />}
+        {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
+      </main>
+    </div>
+  );
+}
+
+/* ===================== OVERVIEW ===================== */
+function Overview({ locs, camps, go }: any) {
+  const visible = locs.filter((l: Location) => !l.isHidden).length;
+  const noMedia = locs.filter((l: Location) => !(l.links && (l.links.old || l.links.now || l.links.pano360))).length;
+  const on = camps.filter((c: Campaign) => c.enabled).length;
+  const cards = [
+    ['📍', locs.length, 'Địa điểm'],
+    ['👁', visible, 'Đang hiển thị'],
+    ['⭐', on, 'Sự kiện đang bật'],
+    ['🖼️', noMedia, 'Thiếu ảnh'],
+  ];
+  return (
+    <div className="adm-body">
+      <div className="adm-stats">
+        {cards.map((c, i) => (
+          <div className="stat" key={i}><div className="ic">{c[0]}</div><b>{c[1]}</b><span>{c[2]}</span></div>
+        ))}
+      </div>
+      <div className="adm-quick">
+        <button className="aprim" onClick={() => go('locations')}>+ Quản lý địa điểm</button>
+        <button className="asec" onClick={() => go('import')}>📥 Import Excel</button>
+        <button className="asec" onClick={() => go('campaigns')}>⭐ Sự kiện</button>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== LOCATIONS ===================== */
+function LocationsPanel({ locs, reload }: any) {
+  const [sel, setSel] = useState<Location | 'new' | null>(null);
+  const [q, setQ] = useState('');
+  const filtered = locs.filter((l: Location) =>
+    (l.i18n?.vi?.name || l.slug).toLowerCase().includes(q.toLowerCase()) || l.slug.includes(q.toLowerCase()));
+  return (
+    <div className="adm-2col">
+      <div className="adm-list">
+        <div className="adm-listhd">
+          <input placeholder="Tìm địa điểm…" value={q} onChange={(e) => setQ(e.target.value)} />
+          <button className="aprim" onClick={() => setSel('new')}>+ Thêm</button>
+        </div>
+        {filtered.map((l: Location) => (
+          <div key={l.id} className={'loc-row ' + (sel !== 'new' && sel?.id === l.id ? 'on' : '')} onClick={() => setSel(l)}>
+            <div><b>{l.i18n?.vi?.name || l.slug}</b><span>{l.slug} · {l.type}{l.isHidden ? ' · ẩn' : ''}</span></div>
+            <div className="dotz">
+              {l.links?.old && <i title="Xưa">🖼️</i>}{l.links?.pano360 && <i title="360°">🌐</i>}{l.links?.audio && <i title="Audio">🎧</i>}
+            </div>
+          </div>
+        ))}
+      </div>
+      <div className="adm-edit">
+        {sel ? (
+          <LocationEditor key={sel === 'new' ? 'new' : sel.id} loc={sel === 'new' ? null : sel}
+            onSaved={() => { reload(); }} onClose={() => setSel(null)} onDeleted={() => { setSel(null); reload(); }} />
+        ) : <div className="adm-empty">Chọn một địa điểm bên trái, hoặc bấm <b>+ Thêm</b>.</div>}
+      </div>
+    </div>
+  );
+}
+
+function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
+  const [tab, setTab] = useState('info');
+  const [f, setF] = useState<any>(() => ({
+    slug: loc?.slug || '', type: loc?.type || 'SPOT', isHidden: !!loc?.isHidden,
+    mapX: loc?.mapX ?? 50, mapY: loc?.mapY ?? 50,
+    vi: { ...(loc?.i18n?.vi || {}) }, en: { ...(loc?.i18n?.en || {}) },
+    links: { ...(loc?.links || {}) },
+    hist: (loc?.history || []).map((h: any) => `${h.year} | ${h.content}`).join('\n'),
+  }));
+  const [msg, setMsg] = useState('');
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  const setVi = (k: string, v: any) => setF((p: any) => ({ ...p, vi: { ...p.vi, [k]: v } }));
+  const setEn = (k: string, v: any) => setF((p: any) => ({ ...p, en: { ...p.en, [k]: v } }));
+  const setLink = (k: string, v: any) => setF((p: any) => ({ ...p, links: { ...p.links, [k]: v } }));
+
+  const save = async () => {
+    if (!f.slug.trim()) { setMsg('Cần nhập mã (slug).'); return; }
+    const history = f.hist.split('\n').map((s: string) => s.trim()).filter(Boolean).map((s: string) => {
+      const i = s.indexOf('|'); return i < 0 ? { year: '', content: s } : { year: s.slice(0, i).trim(), content: s.slice(i + 1).trim() };
+    });
+    const payload = {
+      slug: f.slug.trim(), type: f.type, isHidden: f.isHidden,
+      mapX: Math.round(Number(f.mapX) || 0), mapY: Math.round(Number(f.mapY) || 0),
+      i18n: { vi: f.vi, en: f.en }, history, links: f.links,
+    };
+    try {
+      if (loc) await api.updateLocation(loc.id, payload); else await api.createLocation(payload);
+      setMsg('Đã lưu ✓'); onSaved();
+    } catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const del = async () => { if (loc && confirm('Xoá địa điểm này?')) { await api.deleteLocation(loc.id); onDeleted(); } };
+
+  const uploadFile = (mk: string, key: string) => {
+    if (!loc) { setMsg('Lưu địa điểm trước rồi mới tải file.'); return; }
+    const inp = document.createElement('input');
+    inp.type = 'file'; inp.accept = mk === 'AUDIO' ? 'audio/*' : 'image/*';
+    inp.onchange = async () => {
+      const file = inp.files?.[0]; if (!file) return;
+      setMsg('Đang tải…');
+      try { const r: any = await api.uploadMedia(file, mk, loc.id); setLink(key, (r?.meta?.optimized) || r?.url || ''); setMsg('Đã tải ✓'); }
+      catch (e: any) { setMsg('Lỗi tải: ' + e.message); }
+    };
+    inp.click();
+  };
+
+  return (
+    <div className="editor">
+      <div className="editor-hd">
+        <h3>{loc ? f.vi.name || loc.slug : 'Địa điểm mới'}</h3>
+        <span className="cls" onClick={onClose}>×</span>
+      </div>
+      <div className="tabs">
+        {[['info', 'Thông tin'], ['pos', 'Vị trí'], ['media', 'Media'], ['hist', 'Lịch sử']].map(([k, t]) => (
+          <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{t}</button>
+        ))}
+      </div>
+      <div className="editor-body">
+        {tab === 'info' && (
+          <>
+            <label>Mã (slug)</label>
+            <input value={f.slug} disabled={!!loc} onChange={(e) => set('slug', e.target.value)} placeholder="vd: c1, library" />
+            <div className="frow">
+              <div><label>Loại</label><select value={f.type} onChange={(e) => set('type', e.target.value)}><option value="SPOT">Địa điểm</option><option value="EVENT">Điểm sự kiện</option></select></div>
+              <div><label>Hiển thị</label><select value={f.isHidden ? '1' : '0'} onChange={(e) => set('isHidden', e.target.value === '1')}><option value="0">Hiện</option><option value="1">Ẩn</option></select></div>
+            </div>
+            <label>Tên (vi)</label><input value={f.vi.name || ''} onChange={(e) => setVi('name', e.target.value)} />
+            <label>Tên (en)</label><input value={f.en.name || ''} onChange={(e) => setEn('name', e.target.value)} />
+            <div className="frow">
+              <div><label>Nhãn ngắn</label><input value={f.vi.short || ''} onChange={(e) => setVi('short', e.target.value)} /></div>
+              <div><label>Năm/chú thích</label><input value={f.vi.year || ''} onChange={(e) => setVi('year', e.target.value)} /></div>
+            </div>
+            <label>Mô tả (vi)</label><textarea rows={3} value={f.vi.description || ''} onChange={(e) => setVi('description', e.target.value)} />
+            <label>Mô tả (en)</label><textarea rows={2} value={f.en.description || ''} onChange={(e) => setEn('description', e.target.value)} />
+            <label>Thuyết minh (vi) — đọc bằng máy nếu không có audio</label>
+            <textarea rows={2} value={f.vi.voiceText || ''} onChange={(e) => setVi('voiceText', e.target.value)} />
+          </>
+        )}
+        {tab === 'pos' && <PinPlacer x={Number(f.mapX) || 0} y={Number(f.mapY) || 0} onChange={(x: number, y: number) => setF((p: any) => ({ ...p, mapX: x, mapY: y }))} />}
+        {tab === 'media' && (
+          <>
+            <p className="muted">Dán <b>link chia sẻ</b> (Drive/OneDrive — tự chuyển sang link nhúng) hoặc <b>Tải file</b> lên server.</p>
+            {[['old', 'Ảnh Xưa', 'OLD', 'image'], ['now', 'Ảnh Nay', 'NOW', 'image'], ['pano360', 'Ảnh 360°', 'PANO360', 'image'], ['audio', 'Audio thuyết minh', 'AUDIO', 'audio']].map(([key, lbl, mk, kind]) => (
+              <div className="media-row" key={key}>
+                <label>{lbl}</label>
+                <div className="frow">
+                  <input value={f.links[key] || ''} placeholder="Dán link…"
+                    onChange={(e) => setLink(key, e.target.value)}
+                    onBlur={(e) => setLink(key, normalize(e.target.value, kind as any))} />
+                  <button className="asec" type="button" onClick={() => uploadFile(mk, key)}>Tải file</button>
+                </div>
+                {f.links[key] && kind === 'image' && <img className="media-prev" src={f.links[key]} alt="" onError={(e: any) => (e.target.style.opacity = 0.25)} />}
+                {f.links[key] && kind === 'audio' && <audio controls src={f.links[key]} style={{ width: '100%', marginTop: 6 }} />}
+              </div>
+            ))}
+          </>
+        )}
+        {tab === 'hist' && (
+          <>
+            <label>Dòng thời gian — mỗi mốc 1 dòng: <b>năm | nội dung</b></label>
+            <textarea rows={8} value={f.hist} onChange={(e) => set('hist', e.target.value)} />
+          </>
+        )}
+      </div>
+      <div className="editor-ft">
+        {msg && <span className="msg">{msg}</span>}
+        <div className="spacer" />
+        {loc && <button className="adel" onClick={del}>🗑 Xoá</button>}
+        <button className="aprim" onClick={save}>Lưu</button>
+      </div>
+    </div>
+  );
+}
+
+function PinPlacer({ x, y, onChange }: any) {
+  const [bg, setBg] = useState<string>(() => localStorage.getItem('bk360_bg') || '');
+  const pickBg = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = () => {
+      const file = inp.files?.[0]; if (!file) return;
+      const rd = new FileReader();
+      rd.onload = (ev: any) => { const u = ev.target.result; setBg(u); try { localStorage.setItem('bk360_bg', u); } catch {} };
+      rd.readAsDataURL(file);
+    };
+    inp.click();
+  };
+  const onClick = (e: any) => {
+    const r = e.currentTarget.getBoundingClientRect();
+    onChange(+(((e.clientX - r.left) / r.width) * 100).toFixed(1), +(((e.clientY - r.top) / r.height) * 100).toFixed(1));
+  };
+  return (
+    <>
+      <p className="muted">Bấm lên ảnh nền để đặt vị trí hotspot (toạ độ %). <button className="asec" type="button" onClick={pickBg}>🖼️ Đổi ảnh nền</button></p>
+      <div className="pinbox" onClick={onClick} style={bg ? { backgroundImage: `url(${bg})` } : {}}>
+        {!bg && <div className="pinbox-ph">Chưa có ảnh nền — bấm "Đổi ảnh nền"</div>}
+        <div className="pin-edit" style={{ left: x + '%', top: y + '%' }} />
+      </div>
+      <div className="frow">
+        <div><label>map_x (%)</label><input type="number" value={x} onChange={(e) => onChange(+e.target.value, y)} /></div>
+        <div><label>map_y (%)</label><input type="number" value={y} onChange={(e) => onChange(x, +e.target.value)} /></div>
+      </div>
+    </>
+  );
+}
+
+/* ===================== CAMPAIGNS ===================== */
+function CampaignsPanel({ camps, locs, reload }: any) {
+  const [edit, setEdit] = useState<Campaign | 'new' | null>(null);
+  return (
+    <div className="adm-body">
+      <button className="aprim" onClick={() => setEdit('new')}>+ Thêm sự kiện</button>
+      {camps.map((c: Campaign) => (
+        <div className="arow" key={c.id}>
+          <div className="arow-main"><b>{c.icon} {c.i18n?.vi?.name}</b><span>{c.schedule?.length || 0} hoạt động · {c.enabled ? 'ĐANG BẬT' : 'tắt'}</span></div>
+          <label className="aswitch"><input type="checkbox" checked={c.enabled} onChange={async (e) => { await api.toggleCampaign(c.id, e.target.checked); reload(); }} /><span /></label>
+          <button className="aic" onClick={() => setEdit(c)}>✏️</button>
+          <button className="aic" onClick={async () => { if (confirm('Xoá sự kiện?')) { await api.deleteCampaign(c.id); reload(); } }}>🗑</button>
+        </div>
+      ))}
+      {edit && <CampaignEditor camp={edit === 'new' ? null : edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
+    </div>
+  );
+}
+function CampaignEditor({ camp, onClose, onSaved }: any) {
+  const [slug, setSlug] = useState(camp?.slug || '');
+  const [name, setName] = useState(camp?.i18n?.vi?.name || '');
+  const [icon, setIcon] = useState(camp?.icon || '⭐');
+  const [sched, setSched] = useState((camp?.schedule || []).map((e: any) => `${e.time} | ${e.loc} | ${e.live ? 1 : 0} | ${e.title?.vi || ''}`).join('\n'));
+  const [err, setErr] = useState('');
+  const save = async () => {
+    if (!slug.trim()) { setErr('Cần mã.'); return; }
+    const schedule = sched.split('\n').map((s: string) => s.trim()).filter(Boolean).map((s: string) => {
+      const p = s.split('|').map((x: string) => x.trim());
+      return { time: p[0] || '', loc: p[1] || '', live: p[2] === '1', title: { vi: p[3] || '' } };
+    });
+    const d = { slug: slug.trim(), icon, i18n: { vi: { name: name || slug } }, schedule };
+    try { if (camp) await api.updateCampaign(camp.id, d); else await api.createCampaign({ ...d, enabled: true }); onSaved(); }
+    catch (e: any) { setErr(e.message); }
+  };
+  return (
+    <div className="admin-modal open" onClick={(e: any) => e.target === e.currentTarget && onClose()}>
+      <div className="am-card">
+        <span className="am-cls" onClick={onClose}>×</span>
+        <h3 className="am-ttl">{camp ? 'Sửa sự kiện' : 'Thêm sự kiện'}</h3>
+        <label>Mã (slug)</label><input value={slug} disabled={!!camp} onChange={(e) => setSlug(e.target.value)} placeholder="vd: khaigiang" />
+        <div className="frow"><div style={{ flex: '0 0 80px' }}><label>Icon</label><input value={icon} onChange={(e) => setIcon(e.target.value)} /></div><div><label>Tên (vi)</label><input value={name} onChange={(e) => setName(e.target.value)} /></div></div>
+        <label>Lịch trình — mỗi dòng: <b>giờ | mã địa điểm | live(1/0) | tiêu đề</b></label>
+        <textarea rows={7} value={sched} onChange={(e) => setSched(e.target.value)} />
+        {err && <div className="err">{err}</div>}
+        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== IMPORT ===================== */
+function ImportPanel({ locs, reload }: any) {
+  const [preview, setPreview] = useState<any>(null);
+  const [log, setLog] = useState('');
+
+  const parse = (file: File) => {
+    const rd = new FileReader();
+    rd.onload = (ev: any) => {
+      try {
+        const wb = XLSX.read(new Uint8Array(ev.target.result), { type: 'array' });
+        const rows = (name: string) => {
+          const ws = wb.Sheets[name]; if (!ws) return [];
+          const a: any[] = XLSX.utils.sheet_to_json(ws, { header: 1, blankrows: false, defval: '' });
+          const hdr = a[1] || []; const out: any[] = [];
+          for (let i = 2; i < a.length; i++) { const r = a[i]; if (!r || r.every((c: any) => c === '' || c == null)) continue; const o: any = {}; hdr.forEach((h: any, j: number) => (o[String(h).trim()] = r[j] != null ? r[j] : '')); out.push(o); }
+          return out;
+        };
+        const hist: any = {};
+        rows('LichSu').forEach((h) => { const id = String(h.dia_diem_id || '').trim(); if (!id) return; (hist[id] = hist[id] || []).push({ order: Number(h.thu_tu) || 0, year: String(h.nam || ''), content: h.noi_dung || '' }); });
+        Object.keys(hist).forEach((k) => { hist[k].sort((a: any, b: any) => a.order - b.order); hist[k].forEach((x: any) => delete x.order); });
+        const locations = rows('DiaDiem').filter((d) => String(d.id || '').trim()).map((d) => ({
+          slug: String(d.id).trim(), type: String(d.loai || 'spot').trim().toUpperCase() === 'EVENT' ? 'EVENT' : 'SPOT',
+          mapX: d.map_x === '' ? 0 : Number(d.map_x), mapY: d.map_y === '' ? 0 : Number(d.map_y), isHidden: !yes(d.hien || 'Có'),
+          i18n: { vi: { name: d.ten_vi || d.id, short: d.nhan_ngan || '', year: d.nam || '', description: d.mo_ta_vi || '', voiceText: d.thuyet_minh_vi || '' }, en: { name: d.ten_en || '', description: d.mo_ta_en || '' } },
+          links: { old: normalize(d.link_anh_xua, 'image'), now: normalize(d.link_anh_nay, 'image'), pano360: normalize(d.link_anh_360, 'image'), audio: normalize(d.link_audio, 'audio') },
+          history: hist[String(d.id).trim()] || [],
+        }));
+        const sched: any = {};
+        rows('LichTrinh').forEach((t) => { const sid = String(t.su_kien_id || '').trim(); if (!sid) return; (sched[sid] = sched[sid] || []).push({ time: String(t.gio || ''), loc: String(t.dia_diem_id || ''), live: yes(t.dang_dien_ra), title: { vi: t.tieu_de_vi || '', en: t.tieu_de_en || '' } }); });
+        const campaigns = rows('SuKien').filter((s) => String(s.id || '').trim()).map((s) => ({ slug: String(s.id).trim(), icon: s.icon || '⭐', enabled: yes(s.bat), i18n: { vi: { name: s.ten_vi || s.id }, en: { name: s.ten_en || '' } }, schedule: sched[String(s.id).trim()] || [] }));
+        const existing = new Set(locs.map((l: Location) => l.slug));
+        setPreview({ locations, campaigns, news: locations.filter((l: any) => !existing.has(l.slug)).length, upd: locations.filter((l: any) => existing.has(l.slug)).length });
+        setLog('');
+      } catch (e: any) { setLog('Lỗi đọc file: ' + e.message); }
+    };
+    rd.readAsArrayBuffer(file);
+  };
+
+  const apply = async () => {
+    if (!preview) return;
+    const existing: any = {}; locs.forEach((l: Location) => (existing[l.slug] = l.id));
+    let ok = 0, fail = 0;
+    for (const l of preview.locations) {
+      try { if (existing[l.slug]) await api.updateLocation(existing[l.slug], l); else await api.createLocation(l); ok++; } catch { fail++; }
+    }
+    const camps = await api.adminCampaigns(); const cmap: any = {}; camps.forEach((c: Campaign) => (cmap[c.slug] = c.id));
+    for (const c of preview.campaigns) {
+      try { if (cmap[c.slug]) await api.updateCampaign(cmap[c.slug], c); else await api.createCampaign(c); ok++; } catch { fail++; }
+    }
+    setLog(`Áp dụng xong: ${ok} mục OK${fail ? `, ${fail} lỗi` : ''}.`);
+    setPreview(null); reload();
+  };
+
+  return (
+    <div className="adm-body">
+      <div className="dropzone" onClick={() => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx,.xls'; i.onchange = () => i.files?.[0] && parse(i.files[0]); i.click(); }}>
+        📥 Bấm để chọn file <b>BK360-data.xlsx</b> (Import hàng loạt)
+      </div>
+      {preview && (
+        <div className="adm-card">
+          <p>Đọc được: <b>{preview.locations.length}</b> địa điểm ({preview.news} mới, {preview.upd} cập nhật), <b>{preview.campaigns.length}</b> sự kiện.</p>
+          <p className="muted">Link Drive/OneDrive đã tự chuyển sang link nhúng. Bấm Áp dụng để ghi vào hệ thống.</p>
+          <div className="am-acts"><button className="aprim" onClick={apply}>✅ Áp dụng</button><button className="asec" onClick={() => setPreview(null)}>Huỷ</button></div>
+        </div>
+      )}
+      {log && <div className="adm-card">{log}</div>}
+    </div>
+  );
+}

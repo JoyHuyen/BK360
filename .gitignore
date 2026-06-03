@@ -1,0 +1,12 @@
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.env
+.env.*
+!.env.example
+*.tsbuildinfo
+.DS_Store
+.claude/
+# build output của bản production (không cần cho GitHub Pages)
+/production/web/

@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no" />
+<title>BK360 — 2D Map (ảnh nền + hotspot)</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  :root{--red:#9e1b32;--blue:#0a3d62;--gold:#f5b301;--ink:#2a3242;--line:#e3dccf}
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:"Baloo 2",system-ui,Arial,sans-serif;background:#cdeede;color:var(--ink)}
+  .top{position:sticky;top:0;z-index:20;display:flex;gap:8px;align-items:center;padding:10px 12px;background:#fff;border-bottom:2px solid var(--line)}
+  .top b{color:var(--red);font-size:16px;flex:1}
+  .top button{border:1px solid var(--line);background:#fff;border-radius:10px;padding:7px 11px;font-size:13px;font-weight:700;color:#5a6678;cursor:pointer;font-family:inherit}
+  .top button.on{background:var(--red);color:#fff;border-color:var(--red)}
+  .wrap{max-width:1100px;margin:0 auto;padding:10px}
+  #stage{position:relative;width:100%;border-radius:14px;overflow:hidden;box-shadow:0 6px 22px rgba(0,0,0,.2);background:
+    linear-gradient(135deg,#c2d36a,#9fc36a);min-height:300px}
+  #bg{width:100%;display:block}
+  #ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#3a4a2a;text-align:center;padding:20px;font-weight:700}
+  .pin{position:absolute;transform:translate(-50%,-100%);cursor:pointer;z-index:3;text-align:center}
+  .pin .dot{width:26px;height:26px;border-radius:50% 50% 50% 0;transform:rotate(-45deg);background:var(--red);border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,.35);margin:0 auto}
+  .pin.event .dot{background:#7a3cc8}
+  .pin .lbl{margin-top:4px;font-size:11px;font-weight:800;color:#2a3242;background:rgba(255,255,255,.92);padding:1px 7px;border-radius:10px;white-space:nowrap;box-shadow:0 1px 3px rgba(0,0,0,.18)}
+  .pin.live .dot::after{content:"";position:absolute;inset:-8px;border-radius:50%;border:3px solid #16a34a;transform:rotate(45deg);animation:pulse 1.6s infinite}
+  @keyframes pulse{0%{opacity:.8;transform:rotate(45deg) scale(.7)}100%{opacity:0;transform:rotate(45deg) scale(1.5)}}
+  #toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:#0a1c2e;color:#fff;padding:10px 16px;border-radius:20px;font-size:14px;z-index:40;display:none}
+  /* info bottom sheet */
+  #info{position:fixed;left:0;right:0;bottom:0;z-index:30;background:#fff;border-radius:20px 20px 0 0;max-height:88%;
+    transform:translateY(110%);transition:transform .3s;display:flex;flex-direction:column;box-shadow:0 -8px 30px rgba(0,0,0,.4)}
+  #info.open{transform:translateY(0)}
+  #info .hd{background:linear-gradient(120deg,var(--red),#c8102e);color:#fff;padding:15px 18px;border-radius:20px 20px 0 0;position:relative}
+  #info .hd h3{font-size:18px;padding-right:30px}#info .hd .yr{font-size:12px;opacity:.9}
+  #info .cls{position:absolute;top:12px;right:14px;font-size:26px;cursor:pointer;line-height:1}
+  #info .body{padding:16px;overflow-y:auto}
+  #info p{font-size:14px;line-height:1.6;color:#33425a;margin-bottom:12px}
+  .btnrow{display:flex;gap:8px;margin-bottom:14px;flex-wrap:wrap}
+  .vbtn{display:inline-flex;align-items:center;gap:6px;background:#eef4fb;color:var(--blue);border:1px solid #cfe0f2;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;font-family:inherit}
+  .mt{font-size:12px;font-weight:800;color:var(--red);text-transform:uppercase;letter-spacing:.6px;margin:6px 0 8px}
+  .cmp{position:relative;width:100%;aspect-ratio:16/10;border-radius:12px;overflow:hidden;background:#dde3ee;user-select:none;touch-action:none;margin-bottom:6px}
+  .cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none}
+  .cmp .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#7a8699;font-weight:700;font-size:13px}
+  .cmp .after{clip-path:inset(0 0 0 50%)}
+  .cmp .tag{position:absolute;top:8px;font-size:11px;font-weight:700;color:#fff;background:rgba(0,0,0,.5);padding:2px 8px;border-radius:12px}
+  .cmp .l{left:8px}.cmp .r{right:8px}
+  .cmp .bar{position:absolute;top:0;bottom:0;width:3px;background:#fff;left:50%;transform:translateX(-50%)}
+  .cmp .knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:34px;height:34px;border-radius:50%;background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:var(--red);font-weight:700;cursor:ew-resize}
+  .tl{border-left:3px solid var(--gold);margin-left:6px;padding-left:14px}
+  .tl .ev{margin-bottom:13px;position:relative}.tl .ev::before{content:"";position:absolute;left:-20px;top:3px;width:10px;height:10px;border-radius:50%;background:#c8102e;border:2px solid #fff}
+  .tl b{color:var(--red);font-size:13px}.tl .ev p{font-size:13px;margin:2px 0 0}
+  .hint{font-size:12px;color:#5d6b4a;padding:8px 12px}
+  .adminbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;padding:8px 12px;background:#fff4d6;border-bottom:2px solid #f0d98a}
+  .adminbar button{border:1px solid #e0c878;background:#fff;border-radius:9px;padding:7px 11px;font-size:13px;font-weight:700;color:#7a5a10;cursor:pointer;font-family:inherit}
+  .adminbar #adminInfo{font-size:12.5px;color:#7a6a3a}
+  .loginov{position:fixed;inset:0;background:rgba(6,14,26,.7);display:none;align-items:center;justify-content:center;z-index:50}
+  .loginov.open{display:flex}
+  .loginbox{background:#fff;border-radius:16px;padding:22px;width:320px;max-width:90%;text-align:center}
+  .loginbox h3{color:var(--red);margin-bottom:12px}
+  .loginbox input{width:100%;padding:10px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px;margin-bottom:12px;font-family:inherit}
+  .loginbox button{border:none;border-radius:9px;padding:9px 14px;font-weight:700;cursor:pointer;font-family:inherit}
+  .loginbox .go{background:var(--red);color:#fff}.loginbox .x{background:#eee;color:#444;margin-left:6px}
+</style>
+</head>
+<body>
+<div class="top">
+  <b>🗺️ BK360 — 2D Map</b>
+  <button id="btnLang">EN</button>
+  <button id="btnEvent">⭐ Sự kiện</button>
+  <button id="btnPick" title="Bấm lên map để lấy toạ độ %">🎯 Lấy toạ độ</button>
+  <button id="btnAdmin" title="Quản trị">🔒 Admin</button>
+</div>
+<div class="adminbar" id="adminbar" style="display:none">
+  <button id="btnImport">📥 Import Excel</button>
+  <button id="btnBg">🖼️ Ảnh nền</button>
+  <button id="btnCheck">🔗 Kiểm tra link</button>
+  <button id="btnExport">⬇️ Xuất JSON</button>
+  <button id="btnReset">↺ Khôi phục mặc định</button>
+  <button id="btnLogout">Đăng xuất</button>
+  <span id="adminInfo"></span>
+  <input type="file" id="fileX" accept=".xlsx,.xls" style="display:none">
+  <input type="file" id="fileBg" accept="image/*" style="display:none">
+</div>
+<div class="loginov" id="login"><div class="loginbox">
+  <h3>🔒 Đăng nhập quản trị</h3>
+  <input id="pw" type="password" placeholder="Mật khẩu (demo: bk70)">
+  <div><button class="go" id="loginGo">Đăng nhập</button><button class="x" id="loginX">Huỷ</button></div>
+</div></div>
+<div class="wrap">
+  <div id="stage">
+    <img id="bg" alt="ảnh nền 2D map"/>
+    <div id="ph">Đặt ảnh nền tại <b>&nbsp;assets/map.jpg&nbsp;</b> — hotspot sẽ phủ lên trên.<br>(đang hiển thị nền tạm để demo điểm bấm)</div>
+    <div id="pins"></div>
+  </div>
+  <div class="hint">Chạm điểm 📍 để xem thông tin · "Lấy toạ độ" để lấy map_x/map_y (%) điền vào Excel.</div>
+</div>
+
+<div id="toast"></div>
+<div id="info"><div class="hd"><span class="cls" id="cls">×</span><h3 id="iName"></h3><div class="yr" id="iYear"></div></div><div class="body" id="iBody"></div></div>
+
+<script>
+let DATA={locations:[],campaigns:[]}, lang="vi", eventMode=false, pick=false;
+const $=id=>document.getElementById(id);
+const tx=(o,f)=>(o&&o[lang]&&o[lang][f])||(o&&o.vi&&o.vi[f])||"";
+
+const LS_KEY="bk360_import";
+function boot(){
+  const s=localStorage.getItem(LS_KEY);
+  if(s){try{DATA=JSON.parse(s);render();showImported();return;}catch(e){}}
+  fetch('./bk360-data.json').then(r=>r.json()).then(d=>{DATA=d;render();})
+    .catch(()=>$("ph").innerHTML="Chưa có dữ liệu — admin hãy Import file Excel template.");
+}
+boot();
+
+// nền: nếu có assets/map.jpg thì hiện, lỗi thì để nền tạm
+const bg=$("bg"); bg.onload=()=>{$("ph").style.display="none";bg.style.display="block";}; bg.onerror=()=>{bg.style.display="none";};
+bg.src=localStorage.getItem("bk360_bg")||"assets/map.jpg";
+
+function liveLocs(){
+  const s=new Set();
+  (DATA.campaigns||[]).filter(c=>c.enabled).forEach(c=>(c.schedule||[]).forEach(e=>{if(e.live)s.add(e.loc);}));
+  return s;
+}
+function render(){
+  const live=liveLocs(), pins=$("pins"); pins.innerHTML="";
+  DATA.locations.filter(l=>!l.hidden && l.mapX!=null && l.mapY!=null).forEach(l=>{
+    const isLive=eventMode && live.has(l.id);
+    const el=document.createElement("div");
+    el.className="pin "+(l.type==="event"?"event ":"")+(isLive?"live":"");
+    el.style.left=l.mapX+"%"; el.style.top=l.mapY+"%";
+    el.innerHTML=`<div class="dot"></div><div class="lbl">${tx(l.i18n,"name")||l.id}</div>`;
+    el.onclick=e=>{e.stopPropagation();openInfo(l);};
+    pins.appendChild(el);
+  });
+  $("btnEvent").classList.toggle("on",eventMode);
+}
+
+function openInfo(l){
+  $("iName").textContent=tx(l.i18n,"name")||l.id;
+  $("iYear").textContent=tx(l.i18n,"year");
+  const m=l.media||{}, body=$("iBody");
+  const hasAudio=!!m.audio, voice=tx(l.i18n,"voiceText");
+  let html=`<p>${tx(l.i18n,"description")||""}</p>`;
+  if(hasAudio||voice) html+=`<div class="btnrow"><button class="vbtn" id="play">🎧 ${lang==="vi"?"Nghe thuyết minh":"Listen"}</button></div>`;
+  // Xưa & Nay
+  html+=`<div class="mt">${lang==="vi"?"Xưa & Nay":"Then & Now"}</div>
+    <div class="cmp" id="cmp">
+      ${m.old?`<img class="before" src="${m.old}" onerror="this.style.display='none'">`:`<div class="ph">${lang==="vi"?"ảnh xưa chưa có":"old photo n/a"}</div>`}
+      ${m.now?`<img class="after" id="aft" src="${m.now}" onerror="this.style.display='none'">`:``}
+      <span class="tag l">◀ ${lang==="vi"?"XƯA":"THEN"}</span><span class="tag r">${lang==="vi"?"NAY":"NOW"} ▶</span>
+      <div class="bar" id="bar"><div class="knob">↔</div></div>
+    </div>`;
+  if(l.history&&l.history.length){
+    html+=`<div class="mt">${lang==="vi"?"Dòng thời gian":"Timeline"}</div><div class="tl">`+
+      l.history.map(h=>`<div class="ev"><b>${h.year}</b><p>${h.content}</p></div>`).join("")+`</div>`;
+  }
+  body.innerHTML=html;
+  $("info").classList.add("open");
+  // audio / TTS
+  const pb=$("play");
+  if(pb)pb.onclick=()=>{
+    if(hasAudio){const a=new Audio(m.audio);a.play().catch(()=>speak(voice));}
+    else speak(voice);
+  };
+  initCmp();
+}
+function speak(t){if(!t||!window.speechSynthesis)return;const u=new SpeechSynthesisUtterance(t);u.lang=lang==="vi"?"vi-VN":"en-US";speechSynthesis.cancel();speechSynthesis.speak(u);}
+function initCmp(){
+  const box=$("cmp"),aft=$("aft"),bar=$("bar");if(!box||!aft)return;let drag=false;
+  const set=cx=>{const r=box.getBoundingClientRect();let p=Math.max(0,Math.min(100,(cx-r.left)/r.width*100));aft.style.clipPath=`inset(0 0 0 ${p}%)`;bar.style.left=p+"%";};
+  const dn=e=>{drag=true;set((e.touches?e.touches[0]:e).clientX);};
+  const mv=e=>{if(drag)set((e.touches?e.touches[0]:e).clientX);};
+  box.addEventListener("mousedown",dn);box.addEventListener("touchstart",dn,{passive:true});
+  window.addEventListener("mousemove",mv);box.addEventListener("touchmove",mv,{passive:true});
+  window.addEventListener("mouseup",()=>drag=false);box.addEventListener("touchend",()=>drag=false);
+}
+$("cls").onclick=()=>$("info").classList.remove("open");
+
+// ngôn ngữ / sự kiện / lấy toạ độ
+$("btnLang").onclick=()=>{lang=lang==="vi"?"en":"vi";$("btnLang").textContent=lang==="vi"?"EN":"VI";render();};
+$("btnEvent").onclick=()=>{eventMode=!eventMode;render();};
+$("btnPick").onclick=()=>{pick=!pick;$("btnPick").classList.toggle("on",pick);
+  toast(pick?(lang==="vi"?"Bấm lên ảnh nền để lấy toạ độ":"Click the map to get coords"):"");};
+$("stage").addEventListener("click",e=>{
+  if(!pick)return;const r=$("stage").getBoundingClientRect();
+  const x=((e.clientX-r.left)/r.width*100).toFixed(1), y=((e.clientY-r.top)/r.height*100).toFixed(1);
+  toast(`map_x = ${x}  ·  map_y = ${y}`, 4000);
+});
+function toast(t,ms){const el=$("toast");if(!t){el.style.display="none";return;}el.textContent=t;el.style.display="block";clearTimeout(el._t);el._t=setTimeout(()=>el.style.display="none",ms||2000);}
+
+/* ===================== ADMIN: IMPORT EXCEL TEMPLATE ===================== */
+function yes(v){return ["có","co","yes","x","1","true"].indexOf(String(v==null?"":v).trim().toLowerCase())>=0;}
+// Tự chuyển link chia sẻ Google Drive / OneDrive -> link nhúng trực tiếp
+function driveId(u){var m=u.match(/\/file\/d\/([\w-]+)/)||u.match(/[?&]id=([\w-]+)/);return m?m[1]:null;}
+function normalize(v,kind){
+  var u=(v==null?"":String(v)).trim(); if(!u)return null;
+  var low=u.toLowerCase();
+  if(low.indexOf("drive.google.com")>=0||low.indexOf("docs.google.com")>=0){
+    var id=driveId(u);
+    if(id)return kind==="image"?("https://drive.google.com/thumbnail?id="+id+"&sz=w2000"):("https://drive.google.com/uc?export=download&id="+id);
+    return u;
+  }
+  if(low.indexOf("1drv.ms")>=0||low.indexOf("onedrive.live.com")>=0||low.indexOf("sharepoint.com")>=0){
+    var enc=btoa(unescape(encodeURIComponent(u))).replace(/\+/g,"-").replace(/\//g,"_").replace(/=+$/,"");
+    return "https://api.onedrive.com/v1.0/shares/u!"+enc+"/root/content";
+  }
+  return u;
+}
+function sheetRows(wb,name){
+  var ws=wb.Sheets[name]; if(!ws)return [];
+  var a=XLSX.utils.sheet_to_json(ws,{header:1,blankrows:false,defval:""});
+  var hdr=a[1]||[]; var out=[];
+  for(var i=2;i<a.length;i++){var r=a[i]; if(!r||r.every(function(c){return c===""||c==null;}))continue;
+    var o={}; hdr.forEach(function(h,j){o[String(h).trim()]=r[j]!=null?r[j]:"";}); out.push(o);}
+  return out;
+}
+function buildFromWorkbook(wb){
+  var hist={};
+  sheetRows(wb,"LichSu").forEach(function(h){var id=String(h.dia_diem_id||"").trim();if(!id)return;
+    (hist[id]=hist[id]||[]).push({order:Number(h.thu_tu)||0,year:String(h.nam||""),content:h.noi_dung||""});});
+  Object.keys(hist).forEach(function(k){hist[k].sort(function(a,b){return a.order-b.order;});hist[k].forEach(function(x){delete x.order;});});
+  var locs=sheetRows(wb,"DiaDiem").filter(function(d){return String(d.id||"").trim();}).map(function(d){
+    var id=String(d.id).trim();
+    return {id:id, type:String(d.loai||"spot").trim().toLowerCase(),
+      mapX:d.map_x===""?null:Number(d.map_x), mapY:d.map_y===""?null:Number(d.map_y),
+      hidden:!yes(d.hien||"Có"),
+      i18n:{vi:{name:d.ten_vi||id,short:d.nhan_ngan||"",year:d.nam||"",description:d.mo_ta_vi||"",voiceText:d.thuyet_minh_vi||""},
+            en:{name:d.ten_en||"",description:d.mo_ta_en||""}},
+      media:{old:normalize(d.link_anh_xua,"image"),now:normalize(d.link_anh_nay,"image"),
+             pano360:normalize(d.link_anh_360,"image"),audio:normalize(d.link_audio,"audio")},
+      history:hist[id]||[]};
+  });
+  var sched={};
+  sheetRows(wb,"LichTrinh").forEach(function(t){var sid=String(t.su_kien_id||"").trim();if(!sid)return;
+    (sched[sid]=sched[sid]||[]).push({time:String(t.gio||""),loc:String(t.dia_diem_id||""),live:yes(t.dang_dien_ra),
+      title:{vi:t.tieu_de_vi||"",en:t.tieu_de_en||""}});});
+  var camps=sheetRows(wb,"SuKien").filter(function(s){return String(s.id||"").trim();}).map(function(s){
+    var sid=String(s.id).trim();
+    return {id:sid,icon:s.icon||"⭐",enabled:yes(s.bat),
+      i18n:{vi:{name:s.ten_vi||sid},en:{name:s.ten_en||""}},schedule:sched[sid]||[]};});
+  return {locations:locs,campaigns:camps};
+}
+function showImported(){var a=$("adminInfo");if(a)a.textContent="Đang dùng dữ liệu đã import ("+(DATA.locations||[]).length+" địa điểm).";}
+
+// ----- đăng nhập admin -----
+let isAdmin=false;
+$("btnAdmin").onclick=function(){ if(isAdmin){$("adminbar").style.display=$("adminbar").style.display==="none"?"flex":"none";} else $("login").classList.add("open"); };
+$("loginX").onclick=function(){$("login").classList.remove("open");};
+$("loginGo").onclick=function(){
+  if($("pw").value==="bk70"){isAdmin=true;$("login").classList.remove("open");$("adminbar").style.display="flex";$("btnAdmin").classList.add("on");$("btnAdmin").textContent="🔓 Admin";showImported();}
+  else toast("Sai mật khẩu (demo: bk70)",2500);
+};
+$("pw").addEventListener("keydown",function(e){if(e.key==="Enter")$("loginGo").click();});
+
+// ----- import / export / reset -----
+$("btnImport").onclick=function(){$("fileX").click();};
+$("fileX").onchange=function(e){
+  var f=e.target.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    try{
+      var wb=XLSX.read(new Uint8Array(ev.target.result),{type:"array"});
+      DATA=buildFromWorkbook(wb);
+      localStorage.setItem(LS_KEY,JSON.stringify(DATA));
+      render(); showImported();
+      toast("✅ Import xong: "+DATA.locations.length+" địa điểm, "+DATA.campaigns.length+" sự kiện",4000);
+    }catch(err){toast("Lỗi đọc file: "+err.message,4000);}
+  };
+  rd.readAsArrayBuffer(f); e.target.value="";
+};
+$("btnExport").onclick=function(){
+  var blob=new Blob([JSON.stringify(DATA,null,2)],{type:"application/json"});
+  var a=document.createElement("a"); a.href=URL.createObjectURL(blob); a.download="bk360-data.json"; a.click();
+};
+$("btnReset").onclick=function(){
+  localStorage.removeItem(LS_KEY); $("adminInfo").textContent="Đã khôi phục dữ liệu mặc định.";
+  fetch('./bk360-data.json').then(function(r){return r.json();}).then(function(d){DATA=d;render();}).catch(function(){});
+};
+$("btnLogout").onclick=function(){isAdmin=false;$("adminbar").style.display="none";$("btnAdmin").classList.remove("on");$("btnAdmin").textContent="🔒 Admin";};
+
+// ----- ảnh nền -----
+$("btnBg").onclick=function(){$("fileBg").click();};
+$("fileBg").onchange=function(e){
+  var f=e.target.files[0]; if(!f)return;
+  var rd=new FileReader();
+  rd.onload=function(ev){
+    var u=ev.target.result; bg.src=u; bg.style.display="block"; $("ph").style.display="none";
+    try{localStorage.setItem("bk360_bg",u);toast("✅ Đã đặt ảnh nền (đã lưu).",3000);}
+    catch(err){toast("Ảnh nền lớn — hiển thị tạm, chưa lưu được.",3500);}
+  };
+  rd.readAsDataURL(f); e.target.value="";
+};
+
+// ----- kiểm tra link ảnh -----
+$("btnCheck").onclick=function(){
+  var imgs=[]; (DATA.locations||[]).forEach(function(l){["old","now","pano360"].forEach(function(k){
+    var u=l.media&&l.media[k]; if(u)imgs.push({id:l.id,kind:k,url:u});});});
+  if(!imgs.length){toast("Chưa có link ảnh nào để kiểm tra.",3000);return;}
+  toast("Đang kiểm tra "+imgs.length+" link ảnh…",2500);
+  var done=0,bad=[];
+  imgs.forEach(function(it){var im=new Image();
+    im.onload=function(){fin();}; im.onerror=function(){bad.push(it);fin();}; im.src=it.url;});
+  function fin(){ if(++done<imgs.length)return;
+    if(!bad.length){toast("✅ Tất cả "+imgs.length+" link ảnh OK!",4000);}
+    else{ alert("⚠️ "+bad.length+"/"+imgs.length+" link ảnh KHÔNG mở được:\n\n"+
+      bad.map(function(b){return "• "+b.id+" ("+b.kind+")";}).join("\n")+
+      "\n\nKiểm tra: link đặt 'Anyone with the link' chưa, hoặc link sai/định dạng không nhúng được."); }
+  }
+};
+</script>
+</body>
+</html>

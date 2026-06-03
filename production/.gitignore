@@ -1,0 +1,14 @@
+node_modules/
+dist/
+.env
+*.log
+/data/
+api/prisma/*.db
+.DS_Store
+# Frontend build output (sinh ra từ web-src bằng `npm run build`)
+/web/assets/
+/web/index.html
+/web/sw.js
+/web/workbox-*.js
+/web/registerSW.js
+/web/manifest.webmanifest

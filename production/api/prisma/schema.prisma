@@ -1,0 +1,121 @@
+// BK360 production schema. Nội dung đa ngữ lưu JSON (i18n) để thêm ngôn ngữ
+// không cần đổi schema; history/schedule lưu JSON khớp với shape của frontend.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  SUPERADMIN
+  EDITOR
+  VIEWER
+}
+
+enum LocationType {
+  SPOT
+  EVENT
+}
+
+enum MediaKind {
+  PANO360
+  OLD
+  NOW
+  AUDIO
+  MODEL3D
+}
+
+// Mỗi "project" là một bản đồ/sự kiện độc lập (BK360, Khai giảng, ...).
+// Hiện chạy 1 project mặc định (slug 'bk360'); model đã sẵn cho multi-project sau này.
+model Project {
+  id        String     @id @default(cuid())
+  slug      String     @unique
+  name      String
+  enabled   Boolean    @default(true)
+  theme     Json?      // màu sắc/nhận diện riêng (tuỳ chọn)
+  mapBg     String?    // link ảnh nền 2D map của project
+  order     Int        @default(0)
+  createdAt DateTime   @default(now())
+  locations Location[]
+  campaigns Campaign[]
+}
+
+model User {
+  id           String   @id @default(cuid())
+  email        String   @unique
+  passwordHash String
+  name         String?
+  role         Role     @default(EDITOR)
+  lastLogin    DateTime?
+  createdAt    DateTime @default(now())
+  auditLogs    AuditLog[]
+}
+
+model Location {
+  id        String       @id @default(cuid())
+  slug      String       @unique
+  type      LocationType @default(SPOT)
+  mapX      Int          @default(360)
+  mapY      Int          @default(430)
+  shape     Json?        // {type:'rect'|'arch'|'stadium', w,h,rx,ry,...}
+  palette   Json?        // {sky,ground,bld}
+  links     Json?        // {old,now,pano360,audio} — link ảnh/audio (Drive/OneDrive đã chuẩn hoá)
+  i18n      Json         // {vi:{name,short,year,description,voiceText}, en:{...}}
+  history   Json         @default("[]") // [{year,content}]
+  isHidden  Boolean      @default(false)
+  order     Int          @default(0)
+  media     Media[]
+  project   Project?     @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String?
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+
+  @@index([projectId])
+}
+
+model Media {
+  id         String    @id @default(cuid())
+  location   Location? @relation(fields: [locationId], references: [id], onDelete: SetNull)
+  locationId String?
+  kind       MediaKind
+  url        String
+  lang       String?
+  meta       Json?
+  createdAt  DateTime  @default(now())
+}
+
+model Campaign {
+  id        String   @id @default(cuid())
+  slug      String   @unique
+  icon      String   @default("📅")
+  enabled   Boolean  @default(false)
+  i18n      Json     // {vi:{name,description}, en:{...}}
+  schedule  Json     @default("[]") // [{time,loc,live,title:{vi,en}}]
+  startsAt  DateTime?
+  endsAt    DateTime?
+  order     Int      @default(0)
+  project   Project? @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectId String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([projectId])
+}
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  user      User?    @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId    String?
+  action    String   // CREATE | UPDATE | DELETE | TOGGLE | LOGIN ...
+  entity    String   // Location | Campaign | Media | Auth ...
+  entityId  String?
+  diff      Json?
+  at        DateTime @default(now())
+
+  @@index([entity, entityId])
+  @@index([at])
+}

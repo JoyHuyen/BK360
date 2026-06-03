@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+<meta name="theme-color" content="#9e1b32" />
+<title>BK360 – Hành trình 70 năm | Bách Khoa Hà Nội</title>
+<style>
+  :root{
+    --bk-red:#9e1b32; --bk-red2:#c8102e; --bk-blue:#0a3d62;
+    --gold:#f5b301; --ink:#14233a; --paper:#f5f7fb;
+    --safe-b:env(safe-area-inset-bottom,0px); --safe-t:env(safe-area-inset-top,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  html,body{height:100%;font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(--ink);background:#0b1726;overflow:hidden;overscroll-behavior:none;touch-action:none}
+  #app{position:fixed;inset:0}
+
+  /* ===== VIEWER (nền, full màn hình) ===== */
+  #viewer{position:absolute;inset:0;background:#0b1726;overflow:hidden}
+  canvas#pano{display:block;width:100%;height:100%}
+  .loading{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;color:#cdd;font-size:14px;z-index:9;text-align:center;padding:20px}
+
+  /* ===== HUD trên cùng ===== */
+  .hud-top{position:absolute;top:0;left:0;right:0;padding:calc(12px + var(--safe-t)) 14px 26px;
+    background:linear-gradient(180deg,rgba(4,12,24,.78),transparent);color:#fff;z-index:4;
+    display:flex;align-items:flex-start;gap:10px;pointer-events:none}
+  .hud-top .txt{flex:1;min-width:0}
+  .hud-top h2{font-size:19px;text-shadow:0 2px 8px rgba(0,0,0,.7);line-height:1.15}
+  .hud-top .yr{font-size:12px;opacity:.92;margin-top:2px}
+  .icbtn{pointer-events:auto;width:42px;height:42px;flex:0 0 auto;border-radius:12px;border:1px solid rgba(255,255,255,.28);
+    background:rgba(8,22,40,.6);color:#fff;font-size:20px;display:flex;align-items:center;justify-content:center;cursor:pointer;backdrop-filter:blur(6px)}
+  .icbtn:active{background:var(--bk-red)}
+
+  /* ===== Hotspot ===== */
+  .hotspot{position:absolute;transform:translate(-50%,-50%);cursor:pointer;z-index:3}
+  .hotspot .ring{width:52px;height:52px;border-radius:50%;border:2px solid #fff;background:rgba(158,27,50,.5);
+    display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;backdrop-filter:blur(2px);animation:pulse 2s infinite}
+  .hotspot.move .ring{background:rgba(10,61,98,.55)}
+  .hotspot .lbl{margin-top:5px;font-size:11px;color:#fff;text-align:center;text-shadow:0 1px 4px #000;white-space:nowrap;max-width:120px}
+  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,255,255,.5)}70%{box-shadow:0 0 0 16px rgba(255,255,255,0)}100%{box-shadow:0 0 0 0 rgba(255,255,255,0)}}
+
+  /* ===== Thanh điều khiển dưới ===== */
+  .controls{position:absolute;left:0;right:0;bottom:calc(14px + var(--safe-b));display:flex;gap:8px;justify-content:center;z-index:4;padding:0 10px;flex-wrap:wrap}
+  .controls button{background:rgba(8,22,40,.72);color:#fff;border:1px solid rgba(255,255,255,.25);padding:10px 15px;border-radius:30px;font-size:13px;cursor:pointer;backdrop-filter:blur(6px)}
+  .controls button:active{background:var(--bk-red)}
+  .controls button.on{background:var(--gold);color:#3a2b00;border-color:var(--gold);font-weight:700}
+
+  /* ===== DRAWER (bản đồ + danh sách) – trượt từ dưới ===== */
+  #scrim{position:absolute;inset:0;background:rgba(0,0,0,.45);opacity:0;visibility:hidden;transition:.3s;z-index:6}
+  #scrim.open{opacity:1;visibility:visible}
+  #side{position:absolute;left:0;right:0;bottom:0;z-index:7;background:var(--paper);border-radius:20px 20px 0 0;
+    transform:translateY(100%);transition:transform .35s cubic-bezier(.3,.7,.3,1);max-height:82%;display:flex;flex-direction:column;
+    box-shadow:0 -8px 30px rgba(0,0,0,.4);padding-bottom:var(--safe-b)}
+  #side.open{transform:translateY(0)}
+  .grab{width:42px;height:5px;border-radius:3px;background:#cad3e2;margin:9px auto 4px}
+  .brand{padding:4px 18px 12px;border-bottom:1px solid #e4e9f2}
+  .brand h1{font-size:16px;color:var(--bk-red)}
+  .brand .sub{font-size:11.5px;color:#5a6678;margin-top:2px}
+  .badge70{display:inline-block;margin-top:7px;background:var(--gold);color:#3a2b00;font-weight:700;font-size:11px;padding:3px 10px;border-radius:20px}
+
+  .map-wrap{padding:12px 14px 6px}
+  .map-title{font-size:11px;font-weight:700;color:var(--bk-red);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+  svg#map{width:100%;height:150px;background:#e8eef7;border-radius:12px;display:block;border:1px solid #d3dcec}
+  .pin{cursor:pointer}
+  .pin circle{fill:var(--bk-red2);stroke:#fff;stroke-width:2}
+  .pin.active circle{fill:var(--gold);stroke:var(--bk-blue);stroke-width:2.5}
+  .pin.event circle{fill:#7a3cc8}
+  .pin text{font-size:8.5px;fill:var(--ink);font-weight:700;text-anchor:middle}
+
+  .list{overflow-y:auto;padding:8px 12px 16px;-webkit-overflow-scrolling:touch}
+  .loc{display:flex;gap:11px;align-items:center;padding:11px 10px;border-radius:12px;cursor:pointer;margin-bottom:6px;border:1px solid transparent}
+  .loc:active{background:#e9effb}
+  .loc.active{background:#fdeef0;border-color:#f3c4cc}
+  .loc .dot{width:34px;height:34px;border-radius:9px;flex:0 0 auto;display:flex;align-items:center;justify-content:center;color:#fff;font-weight:800;font-size:12px;background:var(--bk-red)}
+  .loc.event .dot{background:#7a3cc8}
+  .loc .meta b{font-size:14px;display:block}
+  .loc .meta span{font-size:11.5px;color:#5a6678}
+
+  /* ===== Bottom-sheet lịch sử ===== */
+  #info{position:absolute;left:0;right:0;bottom:0;z-index:50;background:#fff;border-radius:20px 20px 0 0;
+    transform:translateY(100%);transition:transform .35s cubic-bezier(.3,.7,.3,1);max-height:88%;display:flex;flex-direction:column;
+    box-shadow:0 -8px 30px rgba(0,0,0,.45);padding-bottom:var(--safe-b)}
+  #info.open{transform:translateY(0)}
+  #info .hd{background:linear-gradient(120deg,var(--bk-red),var(--bk-red2));color:#fff;padding:16px 18px;border-radius:20px 20px 0 0;position:relative}
+  #info .hd h3{font-size:18px;padding-right:30px}
+  #info .hd .cls{position:absolute;top:12px;right:14px;cursor:pointer;font-size:26px;color:#fff;line-height:1}
+  #info .body{padding:18px;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  #info .body p{font-size:14px;line-height:1.65;color:#33425a;margin-bottom:14px}
+  .tl{border-left:3px solid var(--gold);margin-left:6px;padding-left:16px}
+  .tl .ev{margin-bottom:15px;position:relative}
+  .tl .ev::before{content:"";position:absolute;left:-22px;top:3px;width:11px;height:11px;border-radius:50%;background:var(--bk-red2);border:2px solid #fff}
+  .tl .ev b{color:var(--bk-red);font-size:13px}
+  .tl .ev p{font-size:13px;margin:2px 0 0;color:#42506a}
+
+  /* ===== Slider Xưa & Nay ===== */
+  .cmp{position:relative;width:100%;aspect-ratio:16/10;border-radius:12px;overflow:hidden;margin-bottom:8px;
+    user-select:none;touch-action:none;background:#222;box-shadow:0 2px 10px rgba(0,0,0,.18)}
+  .cmp img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-user-drag:none}
+  .cmp .after{clip-path:inset(0 0 0 50%)}
+  .cmp .tag{position:absolute;top:8px;font-size:11px;font-weight:700;color:#fff;padding:3px 9px;border-radius:20px;background:rgba(0,0,0,.55)}
+  .cmp .tag.l{left:8px}
+  .cmp .tag.r{right:8px}
+  .cmp .bar{position:absolute;top:0;bottom:0;width:3px;background:#fff;left:50%;transform:translateX(-50%);box-shadow:0 0 8px rgba(0,0,0,.5)}
+  .cmp .knob{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:38px;height:38px;border-radius:50%;
+    background:#fff;box-shadow:0 2px 8px rgba(0,0,0,.4);display:flex;align-items:center;justify-content:center;color:#9e1b32;font-size:16px;font-weight:700;cursor:ew-resize}
+  .cmp-hint{font-size:11.5px;color:#7a8699;margin:-2px 0 14px;text-align:center}
+
+  /* ===== Màn hình (welcome / map2d / event) ===== */
+  .screen{position:fixed;inset:0;z-index:14;display:none;flex-direction:column;background:#0b1726;padding-bottom:var(--safe-b)}
+  .screen.show{display:flex}
+
+  /* Welcome */
+  #welcome{z-index:16;background:linear-gradient(160deg,#0a2a4a 0%,#0b1726 60%,#2a0a14 100%);overflow-y:auto}
+  #welcome .wbg{position:absolute;inset:0;background-size:cover;background-position:center;opacity:.16;filter:saturate(.8)}
+  #welcome .wrap{position:relative;z-index:1;padding:calc(28px + var(--safe-t)) 22px 26px;display:flex;flex-direction:column;min-height:100%}
+  #welcome .badge70{align-self:flex-start;background:var(--gold);color:#3a2b00;font-weight:800;font-size:12px;padding:5px 13px;border-radius:20px}
+  #welcome h1{color:#fff;font-size:42px;font-weight:800;margin-top:16px;line-height:1}
+  #welcome .tag{color:var(--gold);font-size:21px;font-style:italic;margin-top:4px}
+  #welcome .sub{color:#aecbe8;font-size:13.5px;margin-top:10px;max-width:520px}
+  #welcome .opts{margin-top:26px;display:flex;flex-direction:column;gap:14px;flex:1}
+  .opt{display:flex;align-items:center;gap:16px;padding:18px;border-radius:18px;cursor:pointer;
+    background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);transition:.18s;backdrop-filter:blur(4px)}
+  .opt:active,.opt:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+  .opt .ic{width:58px;height:58px;flex:0 0 auto;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff}
+  .opt .t b{display:block;color:#fff;font-size:18px}
+  .opt .t span{display:block;color:#b9cfe6;font-size:12.5px;margin-top:3px;line-height:1.35}
+  .opt .arw{margin-left:auto;color:#fff;opacity:.5;font-size:22px}
+  #welcome .foot{color:#6f87a3;font-size:11.5px;text-align:center;margin-top:22px}
+
+  /* Top bar dùng chung cho map2d & event */
+  .sbar{display:flex;align-items:center;gap:12px;padding:calc(12px + var(--safe-t)) 16px 12px;background:linear-gradient(120deg,var(--bk-red),var(--bk-red2));color:#fff;z-index:2}
+  .sbar .home{width:40px;height:40px;flex:0 0 auto;border-radius:11px;border:1px solid rgba(255,255,255,.3);background:rgba(255,255,255,.12);color:#fff;font-size:19px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+  .sbar .ttl b{display:block;font-size:17px}
+  .sbar .ttl span{display:block;font-size:11.5px;opacity:.85}
+
+  /* Bản đồ 2D toà nhà */
+  .mapstage{flex:1;position:relative;background:radial-gradient(circle at 50% 38%,#eaf1fb,#d7e2f2);overflow:hidden}
+  svg.campus{width:100%;height:100%;display:block}
+  .bld{cursor:pointer}
+  .bld .shape{fill:#5a7da6;stroke:#fff;stroke-width:2.5;transition:.15s}
+  .bld:hover .shape,.bld.sel .shape{fill:var(--bk-red);}
+  .bld.evt .shape{fill:#7a3cc8}
+  .bld .blab{font-size:15px;font-weight:700;fill:#1d2b40;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:3px}
+  .green{fill:#9cc290;opacity:.7}
+  .road{fill:none;stroke:#c2cdde;stroke-width:14;stroke-linecap:round}
+  .hint{position:absolute;left:50%;bottom:14px;transform:translateX(-50%);background:rgba(8,22,40,.8);color:#fff;font-size:12.5px;padding:8px 16px;border-radius:20px;z-index:3;white-space:nowrap}
+
+  /* Sự kiện 70 năm – lịch trình */
+  #event .mapstage{flex:0 0 auto;height:52%}
+  .sched{flex:1;background:var(--paper);overflow-y:auto;padding:14px 14px 20px;-webkit-overflow-scrolling:touch}
+  .sched h3{font-size:12px;color:var(--bk-red);text-transform:uppercase;letter-spacing:.6px;margin-bottom:10px}
+  .ev-item{display:flex;gap:13px;align-items:flex-start;padding:12px;border-radius:13px;background:#fff;border:1px solid var(--line);margin-bottom:9px;cursor:pointer}
+  .ev-item:active{background:#f0f4fb}
+  .ev-item .tm{flex:0 0 auto;width:52px;text-align:center;font-weight:800;color:var(--bk-blue);font-size:14px}
+  .ev-item .info b{display:block;font-size:14.5px}
+  .ev-item .info span{font-size:12px;color:#5a6678}
+  .live-tag{display:inline-flex;align-items:center;gap:5px;background:#e7f8ee;color:#15803d;font-size:10.5px;font-weight:800;padding:2px 8px;border-radius:12px;margin-top:4px}
+  .live-dot{width:7px;height:7px;border-radius:50%;background:#16a34a;animation:blink 1s infinite}
+  .soon-tag{display:inline-block;background:#eef2f9;color:#64748b;font-size:10.5px;font-weight:700;padding:2px 8px;border-radius:12px;margin-top:4px}
+  @keyframes blink{50%{opacity:.25}}
+  .siglab{font-size:11px;font-weight:800;fill:#15803d;text-anchor:middle;paint-order:stroke;stroke:#fff;stroke-width:3px}
+
+  /* ===== Admin ===== */
+  #admin{background:var(--paper)}
+  #btnAdmin{position:absolute;top:calc(14px + var(--safe-t));right:18px;width:42px;height:42px;border-radius:12px;
+    border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;font-size:18px;cursor:pointer;z-index:3}
+  .atabs{display:flex;gap:8px;padding:12px 14px;background:#fff;border-bottom:1px solid var(--line)}
+  .atab{flex:1;padding:10px;border-radius:10px;border:1px solid var(--line);background:#fff;font-size:13px;font-weight:700;color:#5a6678;cursor:pointer}
+  .atab.on{background:var(--bk-red);color:#fff;border-color:var(--bk-red)}
+  .alist{padding:12px 14px 28px;overflow-y:auto}
+  .aprim{display:block;width:100%;padding:12px;border:none;border-radius:11px;background:var(--bk-blue);color:#fff;font-size:14px;font-weight:700;cursor:pointer;margin-bottom:12px}
+  .asec{padding:10px 14px;border:1px solid var(--line);border-radius:10px;background:#fff;color:#33425a;font-size:13px;cursor:pointer}
+  .arow{display:flex;align-items:center;gap:8px;background:#fff;border:1px solid var(--line);border-radius:12px;padding:11px 12px;margin-bottom:9px}
+  .arow-main{flex:1;min-width:0}
+  .arow-main b{display:block;font-size:14px}
+  .arow-main span{font-size:11.5px;color:#5a6678}
+  .aic{width:38px;height:38px;flex:0 0 auto;border:1px solid var(--line);border-radius:10px;background:#fff;font-size:15px;cursor:pointer}
+  .aswitch{position:relative;width:46px;height:26px;flex:0 0 auto}
+  .aswitch input{opacity:0;width:0;height:0}
+  .aswitch span{position:absolute;inset:0;background:#cbd5e1;border-radius:20px;transition:.2s;cursor:pointer}
+  .aswitch span:before{content:"";position:absolute;width:20px;height:20px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+  .aswitch input:checked+span{background:#16a34a}
+  .aswitch input:checked+span:before{transform:translateX(20px)}
+
+  #adminModal,#loginModal{position:fixed;inset:0;z-index:70;background:rgba(6,14,26,.74);display:none;align-items:center;justify-content:center;padding:16px}
+  #adminModal.open,#loginModal.open{display:flex}
+  .am-card{background:#fff;border-radius:16px;width:460px;max-width:100%;max-height:92%;overflow-y:auto;padding:18px;position:relative}
+  .am-cls{position:absolute;top:10px;right:15px;font-size:26px;color:#8895a8;cursor:pointer;line-height:1}
+  .am-ttl{font-size:17px;color:var(--bk-red);margin-bottom:10px;padding-right:24px}
+  .am-card label{display:block;font-size:12px;font-weight:700;color:#475569;margin:11px 0 4px}
+  .am-card input,.am-card select,.am-card textarea{width:100%;padding:9px 11px;border:1px solid #cbd5e1;border-radius:9px;font-size:14px;font-family:inherit;color:var(--ink)}
+  .am-card textarea{resize:vertical;line-height:1.4}
+  .frow{display:flex;gap:10px}.frow>div{flex:1}
+  .am-acts{display:flex;gap:8px;margin-top:16px}
+  .am-acts .aprim{margin:0;flex:1}
+  .hint-box{background:#f1f5f9;border-radius:9px;padding:9px 11px;font-size:11px;color:#64748b;margin-top:8px;max-height:120px;overflow-y:auto;line-height:1.5}
+  .login-card{background:#fff;border-radius:16px;width:330px;max-width:90%;padding:22px;text-align:center}
+  .login-card h3{color:var(--bk-red);font-size:18px;margin-bottom:6px}
+  .login-card p{font-size:12px;color:#64748b;margin-bottom:14px}
+  .login-card #loginPw{width:100%;padding:11px;border:1px solid #cbd5e1;border-radius:9px;font-size:15px;margin-bottom:12px}
+  .voice-btn{display:inline-flex;align-items:center;gap:6px;background:#eef4fb;color:var(--bk-blue);border:1px solid #cfe0f2;border-radius:20px;padding:8px 14px;font-size:13px;font-weight:700;cursor:pointer;margin-bottom:14px}
+  .camp-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+  .camp-tab{padding:7px 12px;border-radius:20px;border:1px solid var(--line);background:#fff;font-size:12px;font-weight:700;color:#5a6678;cursor:pointer}
+  .camp-tab.on{background:var(--bk-red);color:#fff;border-color:var(--bk-red)}
+
+  /* ===== QR modal ===== */
+  #qrModal{position:absolute;inset:0;z-index:60;background:rgba(6,14,26,.72);display:none;align-items:center;justify-content:center;padding:20px}
+  #qrModal.open{display:flex}
+  .qr-card{position:relative;background:#fff;border-radius:18px;padding:22px 22px 18px;width:300px;max-width:90%;text-align:center;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  .qr-cls{position:absolute;top:8px;right:14px;font-size:26px;color:#90a;cursor:pointer;color:#8895a8;line-height:1}
+  .qr-ttl{font-size:16px;font-weight:800;color:var(--bk-red);margin-bottom:14px;padding:0 10px}
+  .qr-box{display:flex;align-items:center;justify-content:center;padding:12px;background:#fff;border:2px solid #f0e3e6;border-radius:12px}
+  .qr-box img,.qr-box canvas{display:block}
+  .qr-sub{font-size:11.5px;color:#7a8699;margin-top:10px;word-break:break-all}
+  .qr-acts{display:flex;gap:8px;margin-top:14px}
+  .qr-acts button{flex:1;background:var(--bk-red);color:#fff;border:none;padding:10px;border-radius:10px;font-size:12.5px;font-weight:600;cursor:pointer}
+  .qr-acts button:active{background:var(--bk-red2)}
+
+  /* Khu in (ẩn trên màn hình, hiện khi in) */
+  #printArea{display:none}
+  @media print{
+    body *{visibility:hidden}
+    #printArea,#printArea *{visibility:visible}
+    #printArea{display:block;position:absolute;inset:0;padding:14mm}
+    .pa-head{text-align:center;margin-bottom:10mm}
+    .pa-head h1{font-size:20pt;color:#9e1b32}
+    .pa-head p{font-size:11pt;color:#444;margin-top:3mm}
+    .pa-grid{display:grid;grid-template-columns:1fr 1fr;gap:10mm}
+    .pa-cell{border:1.5pt dashed #bbb;border-radius:8pt;padding:7mm;text-align:center;page-break-inside:avoid}
+    .pa-cell h3{font-size:14pt;color:#0a3d62;margin-bottom:2mm}
+    .pa-cell .y{font-size:9pt;color:#666;margin-bottom:4mm}
+    .pa-cell img{width:42mm;height:42mm}
+    .pa-cell .q{font-size:8pt;color:#888;margin-top:3mm}
+  }
+
+  /* ===== Desktop: biến drawer thành sidebar trái ===== */
+  @media (min-width:820px){
+    #app{display:flex}
+    #scrim{display:none}
+    #side{position:relative;transform:none!important;max-height:none;width:360px;flex:0 0 360px;border-radius:0;box-shadow:2px 0 18px rgba(0,0,0,.3)}
+    #side .grab{display:none}
+    #viewer{position:relative;flex:1}
+    .hud-top .icbtn.menu{display:none}
+    #info{left:auto;width:380px;border-radius:0;top:0;bottom:0;max-height:none;transform:translateX(110%)}
+    #info.open{transform:translateX(0)}
+    #info .hd{border-radius:0}
+    .list{flex:1}
+  }
+</style>
+</head>
+<body>
+<div id="app">
+  <!-- VIEWER -->
+  <main id="viewer">
+    <div class="loading" id="loading">Đang tải Three.js…</div>
+    <canvas id="pano"></canvas>
+
+    <div class="hud-top">
+      <button class="icbtn" id="btnHome" title="Về màn hình chính">‹</button>
+      <button class="icbtn menu" id="btnMenu" title="Bản đồ & địa điểm">☰</button>
+      <div class="txt">
+        <h2 id="locName">—</h2>
+        <div class="yr" id="locYear"></div>
+      </div>
+      <button class="icbtn" id="btnQR" title="Mã QR điểm này">⊞</button>
+    </div>
+
+    <div class="controls">
+      <button id="btnGyro">🧭 Xoay điện thoại</button>
+      <button id="btnAudio">🎧 Thuyết minh</button>
+      <button id="btnReset">↺ Giữa</button>
+    </div>
+  </main>
+
+  <!-- DRAWER -->
+  <div id="scrim"></div>
+  <aside id="side">
+    <div class="grab"></div>
+    <div class="brand">
+      <h1>BK360 – Hành trình 70 năm</h1>
+      <div class="sub">Đại học Bách khoa Hà Nội · Tour tham quan ảo 360°</div>
+      <span class="badge70">★ 1956 – 2026 · 70 NĂM</span>
+    </div>
+    <div class="map-wrap">
+      <div class="map-title">Bản đồ campus</div>
+      <svg id="map" viewBox="0 0 320 200"></svg>
+    </div>
+    <div class="list" id="list"></div>
+  </aside>
+</div>
+
+  <!-- QR MODAL (đặt ngoài #app để nổi trên mọi màn hình) -->
+  <div id="qrModal">
+    <div class="qr-card">
+      <span class="qr-cls" id="qrClose">×</span>
+      <div class="qr-ttl" id="qrTitle"></div>
+      <div class="qr-box" id="qrBox"></div>
+      <div class="qr-sub" id="qrSub"></div>
+      <div class="qr-acts">
+        <button id="qrPrintOne">🖨️ In thẻ này</button>
+        <button id="qrPrintAll">⊞ In bảng tất cả điểm</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- INFO -->
+  <div id="info">
+    <div class="hd"><span class="cls" id="infoClose">×</span><h3 id="infoTitle"></h3></div>
+    <div class="body" id="infoBody"></div>
+  </div>
+
+<!-- Khu vực in (QR) -->
+<div id="printArea"></div>
+
+<!-- ===== WELCOME ===== -->
+<div id="welcome" class="screen show">
+  <div class="wbg" id="wbg"></div>
+  <button id="btnAdmin" title="Quản trị">🔒</button>
+  <div class="wrap">
+    <span class="badge70">★ 1956 – 2026 · 70 NĂM</span>
+    <h1>BK360</h1>
+    <div class="tag">Hành trình 70 năm</div>
+    <div class="sub">Khám phá Đại học Bách khoa Hà Nội — chọn cách bạn muốn tham quan.</div>
+    <div class="opts">
+      <div class="opt" data-go="map2d">
+        <div class="ic" style="background:#9e1b32">🗺️</div>
+        <div class="t"><b>Bản đồ 2D</b><span>Chạm vào từng toà nhà để xem quá trình hình thành & ảnh Xưa / Nay.</span></div>
+        <div class="arw">›</div>
+      </div>
+      <div class="opt" data-go="vr360">
+        <div class="ic" style="background:#0a3d62">🌐</div>
+        <div class="t"><b>VR360 Campus Tour</b><span>Dạo quanh khuôn viên bằng ảnh 360°, di chuyển giữa các điểm.</span></div>
+        <div class="arw">›</div>
+      </div>
+      <div class="opt" id="optEvent" data-go="event">
+        <div class="ic" style="background:#7a3cc8">⭐</div>
+        <div class="t"><b>Sự kiện 70 năm</b><span>Lịch trình & bản đồ — toà nhà đang diễn ra sự kiện sẽ phát tín hiệu.</span></div>
+        <div class="arw">›</div>
+      </div>
+    </div>
+    <div class="foot">Bản demo · Quét QR tại trường để vào thẳng từng điểm</div>
+  </div>
+</div>
+
+<!-- ===== MAP 2D ===== -->
+<div id="map2d" class="screen">
+  <div class="sbar">
+    <div class="home" data-go="welcome">‹</div>
+    <div class="ttl"><b>Bản đồ 2D · Khám phá toà nhà</b><span>Chạm vào một toà nhà để xem lịch sử</span></div>
+  </div>
+  <div class="mapstage"><svg class="campus" id="svgMap2d" viewBox="0 0 720 860" preserveAspectRatio="xMidYMid meet"></svg>
+    <div class="hint">👆 Chạm vào toà nhà bất kỳ</div>
+  </div>
+</div>
+
+<!-- ===== SỰ KIỆN 70 NĂM ===== -->
+<div id="event" class="screen">
+  <div class="sbar">
+    <div class="home" data-go="welcome">‹</div>
+    <div class="ttl"><b>Sự kiện 70 năm</b><span id="evHead">Đang diễn ra — chạm điểm phát tín hiệu</span></div>
+  </div>
+  <div class="mapstage"><svg class="campus" id="svgEvent" viewBox="0 0 720 860" preserveAspectRatio="xMidYMid meet"></svg></div>
+  <div class="sched" id="sched"></div>
+</div>
+
+<!-- ===== ADMIN ===== -->
+<div id="admin" class="screen">
+  <div class="sbar">
+    <div class="home" data-go="welcome">‹</div>
+    <div class="ttl"><b>Quản trị nội dung</b><span>Thêm/sửa địa điểm, thuyết minh & sự kiện</span></div>
+  </div>
+  <div id="adminBody" style="flex:1;overflow-y:auto;display:flex;flex-direction:column"></div>
+</div>
+
+<!-- Modal form admin -->
+<div id="adminModal"><div class="am-card"><span class="am-cls" id="amCls">×</span><div id="amBody"></div></div></div>
+
+<!-- Modal đăng nhập -->
+<div id="loginModal"><div class="login-card">
+  <h3>🔒 Đăng nhập quản trị</h3>
+  <p>Nhập mật khẩu để chỉnh sửa nội dung (demo: <b>bk70</b>)</p>
+  <input id="loginPw" type="password" placeholder="Mật khẩu" autocomplete="off">
+  <div class="am-acts"><button class="aprim" id="loginBtn" style="margin:0">Đăng nhập</button><button class="asec" id="loginCancel">Huỷ</button></div>
+</div></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script>
+/* ============================================================
+   BK360 – Đại học Bách khoa Hà Nội (HUST)
+   Prototype mobile-first · panorama mô phỏng bằng canvas
+   ============================================================ */
+let LOCATIONS = [
+  {
+    id:"parabol", name:"Cổng Parabol", short:"Biểu tượng", year:"Biểu tượng từ thập niên 1960",
+    map:[48,150], type:"spot", palette:{sky:"#7fb2e8",ground:"#6f7d54",bld:"#9e1b32"},
+    links:["c1","c2"],
+    history:[
+      {y:"1956",t:"Trường Đại học Bách khoa Hà Nội thành lập (06/3/1956) – trường đại học kỹ thuật đầu tiên của Việt Nam."},
+      {y:"1960s",t:"Cổng Parabol trên đường Đại Cồ Việt hình thành, trở thành biểu tượng kiến trúc của trường."},
+      {y:"2016",t:"Cổng Parabol được tu bổ nhân kỷ niệm 60 năm, giữ nguyên dáng vòm đặc trưng."}
+    ],
+    desc:"Cổng Parabol với mái vòm cong đặc trưng là biểu tượng gắn liền với hình ảnh Bách Khoa Hà Nội, điểm check-in của bao thế hệ sinh viên trên đường Đại Cồ Việt."
+  },
+  {
+    id:"c1", name:"Tòa nhà C1", short:"Nhà điều hành", year:"Khu trung tâm lịch sử",
+    map:[120,108], type:"spot", palette:{sky:"#9cc4ec",ground:"#8a8170",bld:"#0a3d62"},
+    links:["parabol","library","c2"],
+    history:[
+      {y:"1956",t:"Khu nhà học đầu tiên phục vụ khóa sinh viên kỹ thuật đầu tiên của cả nước."},
+      {y:"1965",t:"Trong chiến tranh, trường vẫn duy trì giảng dạy, sơ tán nhưng không gián đoạn đào tạo."},
+      {y:"2022",t:"Trường ĐH Bách khoa Hà Nội chuyển thành Đại học Bách khoa Hà Nội (mô hình đại học có các trường thành viên)."}
+    ],
+    desc:"Khu nhà C1 thuộc trung tâm khuôn viên, gắn với hoạt động điều hành và giảng dạy. Đây là nơi lưu giữ nhiều dấu ấn lịch sử của nhà trường."
+  },
+  {
+    id:"library", name:"Thư viện Tạ Quang Bửu", short:"Thư viện", year:"Khánh thành 2006",
+    map:[205,76], type:"spot", palette:{sky:"#aacdf0",ground:"#7d8a6a",bld:"#1565c0"},
+    links:["c1","c2"],
+    history:[
+      {y:"1956",t:"Tủ sách kỹ thuật phục vụ giảng dạy được hình thành từ những ngày đầu."},
+      {y:"2006",t:"Tòa thư viện hiện đại khánh thành, mang tên GS. Tạ Quang Bửu – nhà khoa học, nguyên Hiệu trưởng nhà trường."},
+      {y:"2020",t:"Số hóa kho học liệu, phát triển không gian học tập sáng tạo."}
+    ],
+    desc:"Thư viện Tạ Quang Bửu là tòa nhà 10 tầng nổi bật giữa khuôn viên, trung tâm tri thức với hàng trăm nghìn đầu sách và không gian học tập hiện đại."
+  },
+  {
+    id:"c2", name:"Hội trường C2", short:"Hội trường", year:"Nơi tổ chức sự kiện",
+    map:[150,150], type:"spot", palette:{sky:"#bcd4ef",ground:"#7f8568",bld:"#37474f"},
+    links:["c1","stadium","library"],
+    history:[
+      {y:"1956",t:"Các buổi lễ và sinh hoạt học thuật lớn được tổ chức tại khu trung tâm."},
+      {y:"2000s",t:"Hội trường C2 trở thành nơi diễn ra lễ tốt nghiệp, hội nghị khoa học."}
+    ],
+    desc:"Hội trường C2 là nơi tổ chức các sự kiện lớn của trường: lễ tốt nghiệp, hội nghị, hội thảo khoa học và các hoạt động của sinh viên."
+  },
+  {
+    id:"stadium", name:"Sân vận động & Sân khấu lễ 70 năm", short:"Sự kiện 70 năm", year:"Sự kiện 2026 · ⭐",
+    map:[258,138], type:"event", palette:{sky:"#ffd27f",ground:"#9a7b4f",bld:"#7a3cc8"},
+    links:["c2","c1"],
+    history:[
+      {y:"2026",t:"Lễ kỷ niệm 70 năm thành lập trường: sân khấu chính, triển lãm 'Xưa & Nay', gian hàng các trường/khoa thành viên."},
+      {y:"2026",t:"Đêm gala hội ngộ các thế hệ cán bộ, giảng viên, sinh viên Bách Khoa Hà Nội."}
+    ],
+    desc:"⭐ ĐIỂM SỰ KIỆN: Sân vận động Bách Khoa được dựng sân khấu lớn cho lễ kỷ niệm 70 năm (1956–2026), kèm khu triển lãm ảnh và các gian hàng truyền thống."
+  }
+];
+
+/* ---------- Sinh panorama mô phỏng (equirectangular 2:1) ---------- */
+function makePano(loc){
+  const W=2048,H=1024,c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d"),p=loc.palette;
+  const sky=x.createLinearGradient(0,0,0,H*0.55);sky.addColorStop(0,p.sky);sky.addColorStop(1,"#eef6ff");
+  x.fillStyle=sky;x.fillRect(0,0,W,H*0.55);
+  const gd=x.createLinearGradient(0,H*0.55,0,H);gd.addColorStop(0,p.ground);gd.addColorStop(1,"#3c4636");
+  x.fillStyle=gd;x.fillRect(0,H*0.55,W,H*0.45);
+  x.strokeStyle="rgba(255,255,255,.25)";x.lineWidth=2;x.beginPath();x.moveTo(0,H*0.55);x.lineTo(W,H*0.55);x.stroke();
+  let seed=loc.id.length*7+3;const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  for(let i=0;i<26;i++){
+    const bw=60+rnd()*120,bh=120+rnd()*260,bx=rnd()*W,by=H*0.55-bh;
+    x.fillStyle=i%3===0?p.bld:(i%2?"#5b6b80":"#48566b");x.globalAlpha=.92;x.fillRect(bx,by,bw,bh);
+    x.fillStyle="rgba(255,255,255,.5)";
+    for(let wy=by+14;wy<by+bh-14;wy+=26)for(let wx=bx+10;wx<bx+bw-10;wx+=22)if(rnd()>.35)x.fillRect(wx,wy,10,14);
+    x.globalAlpha=1;
+  }
+  x.globalAlpha=.16;x.fillStyle="#fff";x.font="bold 140px Segoe UI";x.textAlign="center";
+  x.fillText(loc.name.split("&")[0].trim(),W/2,H*0.42);x.globalAlpha=1;
+  x.fillStyle="rgba(255,255,255,.06)";for(let i=0;i<400;i++)x.fillRect(rnd()*W,H*0.55+rnd()*H*0.45,3,3);
+  return new THREE.CanvasTexture(c);
+}
+
+/* ---------- Sinh ảnh mặt tiền "Xưa" / "Nay" cho slider so sánh ---------- */
+function makeFacade(loc,era){
+  const W=640,H=400,c=document.createElement("canvas");c.width=W;c.height=H;
+  const x=c.getContext("2d"),p=loc.palette,old=era==="xua";
+  let seed=loc.id.length*5+(old?11:29);const rnd=()=>{seed=(seed*9301+49297)%233280;return seed/233280;};
+  // trời
+  const sky=x.createLinearGradient(0,0,0,H*0.6);
+  if(old){sky.addColorStop(0,"#b9ab8e");sky.addColorStop(1,"#e7ddc8");}
+  else{sky.addColorStop(0,p.sky);sky.addColorStop(1,"#eef6ff");}
+  x.fillStyle=sky;x.fillRect(0,0,W,H);
+  // tòa nhà chính giữa
+  const bw=W*0.5,bh=H*0.62,bx=W*0.25,by=H*0.6-bh;
+  x.fillStyle=old?"#8a7d63":p.bld;x.fillRect(bx,by,bw,bh);
+  // cửa sổ
+  x.fillStyle=old?"rgba(60,50,35,.55)":"rgba(255,255,255,.6)";
+  for(let wy=by+18;wy<by+bh-18;wy+=34)for(let wx=bx+14;wx<bx+bw-14;wx+=30)x.fillRect(wx,wy,16,22);
+  // tòa hai bên
+  x.fillStyle=old?"#766a52":"#5b6b80";
+  x.fillRect(bx-W*0.22,H*0.6-H*0.4,W*0.2,H*0.4);x.fillRect(bx+bw+W*0.02,H*0.6-H*0.45,W*0.2,H*0.45);
+  // mặt đất
+  x.fillStyle=old?"#5f5740":p.ground;x.fillRect(0,H*0.6,W,H*0.4);
+  // chi tiết "nay": cây xanh + người
+  if(!old){x.fillStyle="#3f7d3a";for(let i=0;i<6;i++){const tx=40+rnd()*W-40;x.beginPath();x.arc(tx,H*0.66,16+rnd()*8,0,7);x.fill();}}
+  // hiệu ứng "xưa": sepia + grain + vignette
+  if(old){
+    x.globalAlpha=.18;x.fillStyle="#3a2c12";x.fillRect(0,0,W,H);x.globalAlpha=1;
+    for(let i=0;i<2600;i++){x.fillStyle=`rgba(0,0,0,${rnd()*.12})`;x.fillRect(rnd()*W,rnd()*H,1,1);}
+    const vg=x.createRadialGradient(W/2,H/2,H*0.3,W/2,H/2,W*0.7);
+    vg.addColorStop(0,"rgba(0,0,0,0)");vg.addColorStop(1,"rgba(40,28,10,.5)");x.fillStyle=vg;x.fillRect(0,0,W,H);
+  }
+  return c.toDataURL();
+}
+
+/* ---------- Three.js ---------- */
+let scene,camera,renderer,sphere;
+let lon=0,lat=0,isDown=false,dx=0,dy=0,plon=0,plat=0;
+let gyroOn=false,gyroBase=null;
+let current=LOCATIONS[0];
+
+function initThree(){
+  const cv=document.getElementById("pano");
+  renderer=new THREE.WebGLRenderer({canvas:cv,antialias:true});renderer.setPixelRatio(window.devicePixelRatio);
+  scene=new THREE.Scene();camera=new THREE.PerspectiveCamera(75,1,1,1100);
+  const geo=new THREE.SphereGeometry(500,60,40);geo.scale(-1,1,1);
+  sphere=new THREE.Mesh(geo,new THREE.MeshBasicMaterial());scene.add(sphere);
+  resize();window.addEventListener("resize",resize);bindDrag(cv);
+  document.getElementById("loading").style.display="none";
+  const start=LOCATIONS.find(l=>l.id===location.hash.slice(1))||LOCATIONS[0];
+  loadLocation(start);animate();
+}
+function resize(){const v=document.getElementById("viewer");renderer.setSize(v.clientWidth,v.clientHeight);
+  camera.aspect=v.clientWidth/v.clientHeight;camera.updateProjectionMatrix();}
+function bindDrag(cv){
+  const down=e=>{if(gyroOn)return;isDown=true;const t=e.touches?e.touches[0]:e;dx=t.clientX;dy=t.clientY;plon=lon;plat=lat;};
+  const move=e=>{if(!isDown||gyroOn)return;const t=e.touches?e.touches[0]:e;
+    lon=(dx-t.clientX)*0.16+plon;lat=(t.clientY-dy)*0.16+plat;lat=Math.max(-80,Math.min(80,lat));};
+  const up=()=>isDown=false;
+  cv.addEventListener("mousedown",down);window.addEventListener("mousemove",move);window.addEventListener("mouseup",up);
+  cv.addEventListener("touchstart",down,{passive:true});cv.addEventListener("touchmove",move,{passive:true});window.addEventListener("touchend",up);
+}
+function animate(){requestAnimationFrame(animate);
+  const ph=THREE.MathUtils.degToRad(90-lat),th=THREE.MathUtils.degToRad(lon);
+  camera.lookAt(500*Math.sin(ph)*Math.cos(th),500*Math.cos(ph),500*Math.sin(ph)*Math.sin(th));
+  renderer.render(scene,camera);positionHotspots();}
+
+/* ---------- Gyroscope (nhìn quanh bằng cách xoay điện thoại) ---------- */
+function onOrient(e){
+  if(!gyroOn||e.alpha==null)return;
+  if(gyroBase===null)gyroBase=e.alpha;
+  lon=-(e.alpha-gyroBase);
+  lat=Math.max(-80,Math.min(80,(e.beta||0)-90+ (e.beta>90?0:0)));
+}
+async function toggleGyro(){
+  const btn=document.getElementById("btnGyro");
+  if(gyroOn){gyroOn=false;gyroBase=null;btn.classList.remove("on");return;}
+  // iOS 13+ cần xin quyền
+  if(typeof DeviceOrientationEvent!=="undefined" && typeof DeviceOrientationEvent.requestPermission==="function"){
+    try{const r=await DeviceOrientationEvent.requestPermission();if(r!=="granted")return alert("Cần cấp quyền cảm biến để dùng chế độ xoay điện thoại.");}
+    catch(_){return alert("Thiết bị không hỗ trợ cảm biến hướng.");}
+  }
+  if(!("DeviceOrientationEvent" in window))return alert("Thiết bị/trình duyệt không hỗ trợ con quay hồi chuyển.\n(Tính năng này hoạt động tốt nhất trên điện thoại.)");
+  gyroOn=true;gyroBase=null;btn.classList.add("on");
+  window.addEventListener("deviceorientation",onOrient);
+}
+
+/* ---------- Hotspots ---------- */
+let hotspots=[];
+function buildHotspots(loc){
+  document.querySelectorAll(".hotspot").forEach(h=>h.remove());hotspots=[];
+  const v=document.getElementById("viewer");
+  loc.links.forEach((id,i)=>{const t=LOCATIONS.find(l=>l.id===id);
+    const ang=(i/Math.max(1,loc.links.length))*Math.PI*1.6-0.8;
+    addHotspot(v,ang,0.06,"move","🧭",t.name,()=>loadLocation(t));});
+  addHotspot(v,0.45,-0.04,"info","ℹ️","Lịch sử & sự kiện",()=>openInfo(loc));
+}
+function addHotspot(v,theta,phiOff,cls,icon,label,onClick){
+  const el=document.createElement("div");el.className="hotspot "+cls;
+  el.innerHTML=`<div class="ring">${icon}</div><div class="lbl">${label}</div>`;
+  el.addEventListener("click",onClick);v.appendChild(el);hotspots.push({el,theta,phiOff});
+}
+function positionHotspots(){
+  const v=document.getElementById("viewer"),W=v.clientWidth,H=v.clientHeight;
+  hotspots.forEach(h=>{const ph=Math.PI/2+h.phiOff,th=h.theta;
+    const sp=new THREE.Vector3(Math.sin(ph)*Math.cos(th),Math.cos(ph),Math.sin(ph)*Math.sin(th)).project(camera);
+    if(sp.z<1){h.el.style.display="block";h.el.style.left=((sp.x+1)/2*W)+"px";h.el.style.top=((-sp.y+1)/2*H)+"px";}
+    else h.el.style.display="none";});
+}
+
+/* ---------- Điều hướng địa điểm ---------- */
+function loadLocation(loc){
+  current=loc;lon=0;lat=0;gyroBase=null;
+  sphere.material.map=makePano(loc);sphere.material.needsUpdate=true;
+  document.getElementById("locName").textContent=loc.name;
+  document.getElementById("locYear").textContent=loc.year;
+  buildHotspots(loc);renderList();renderMap();closeDrawer();
+  if(location.hash.slice(1)!==loc.id){history.replaceState(null,"","#"+loc.id);}
+}
+
+/* ---------- Lịch sử ---------- */
+function openInfo(loc){
+  document.getElementById("infoTitle").textContent=loc.name;
+  const tl=loc.history.map(h=>`<div class="ev"><b>${h.y}</b><p>${h.t}</p></div>`).join("");
+  const cmp=`
+    <div class="map-title" style="margin-bottom:8px">Xưa & Nay</div>
+    <div class="cmp" id="cmp">
+      <img class="before" src="${makeFacade(loc,"xua")}" alt="xưa">
+      <img class="after" id="cmpAfter" src="${makeFacade(loc,"nay")}" alt="nay">
+      <span class="tag l">◀ XƯA</span><span class="tag r">NAY ▶</span>
+      <div class="bar" id="cmpBar"><div class="knob">↔</div></div>
+    </div>
+    <div class="cmp-hint">Kéo thanh trắng để so sánh ảnh xưa và nay</div>`;
+  document.getElementById("infoBody").innerHTML=
+    `<p>${loc.desc}</p>
+     <button class="voice-btn" id="voiceBtn">🎧 Nghe thuyết minh</button>
+     ${cmp}<div class="map-title" style="margin-bottom:8px">Dòng thời gian</div><div class="tl">${tl}</div>`;
+  document.getElementById("info").classList.add("open");
+  const vb=document.getElementById("voiceBtn");if(vb)vb.onclick=()=>speak(loc);
+  initCompare();
+}
+function speak(loc){
+  if(!window.speechSynthesis)return alert("Trình duyệt không hỗ trợ thuyết minh.");
+  const u=new SpeechSynthesisUtterance(loc.voice||loc.desc||loc.name);u.lang="vi-VN";
+  speechSynthesis.cancel();speechSynthesis.speak(u);
+}
+function initCompare(){
+  const box=document.getElementById("cmp"),after=document.getElementById("cmpAfter"),bar=document.getElementById("cmpBar");
+  if(!box)return;let drag=false;
+  const set=cx=>{const r=box.getBoundingClientRect();let pct=(cx-r.left)/r.width*100;pct=Math.max(0,Math.min(100,pct));
+    after.style.clipPath=`inset(0 0 0 ${pct}%)`;bar.style.left=pct+"%";};
+  const dn=e=>{drag=true;set((e.touches?e.touches[0]:e).clientX);};
+  const mv=e=>{if(drag)set((e.touches?e.touches[0]:e).clientX);};
+  box.addEventListener("mousedown",dn);box.addEventListener("touchstart",dn,{passive:true});
+  window.addEventListener("mousemove",mv);box.addEventListener("touchmove",mv,{passive:true});
+  window.addEventListener("mouseup",()=>drag=false);box.addEventListener("touchend",()=>drag=false);
+}
+document.getElementById("infoClose").onclick=()=>document.getElementById("info").classList.remove("open");
+
+/* ---------- Danh sách + bản đồ ---------- */
+function renderList(){
+  document.getElementById("list").innerHTML=LOCATIONS.filter(l=>!l.hidden).map(l=>`
+    <div class="loc ${l.type==="event"?"event":""} ${l.id===current.id?"active":""}" data-id="${l.id}">
+      <div class="dot">${l.type==="event"?"★":(l.name.match(/C\d/)?l.name.match(/C\d/)[0]:l.name[0])}</div>
+      <div class="meta"><b>${l.name}</b><span>${l.short} · ${l.year}</span></div>
+    </div>`).join("");
+  document.querySelectorAll(".loc").forEach(el=>el.onclick=()=>loadLocation(LOCATIONS.find(l=>l.id===el.dataset.id)));
+}
+function renderMap(){
+  const base=`<path d="M18 172 L110 58 L302 48 L302 192 L18 192 Z" fill="#dfe7f3" stroke="#c2cee2"/>
+    <line x1="48" y1="150" x2="120" y2="108" stroke="#b9c6dc" stroke-dasharray="4 3"/>
+    <line x1="120" y1="108" x2="205" y2="76" stroke="#b9c6dc" stroke-dasharray="4 3"/>
+    <line x1="120" y1="108" x2="150" y2="150" stroke="#b9c6dc" stroke-dasharray="4 3"/>
+    <line x1="150" y1="150" x2="258" y2="138" stroke="#b9c6dc" stroke-dasharray="4 3"/>`;
+  const pins=LOCATIONS.filter(l=>!l.hidden&&l.map).map(l=>`
+    <g class="pin ${l.type==="event"?"event":""} ${l.id===current.id?"active":""}" data-id="${l.id}" transform="translate(${l.map[0]},${l.map[1]})">
+      <circle r="9"></circle><text y="-13">${l.short}</text></g>`).join("");
+  document.getElementById("map").innerHTML=base+pins;
+  document.querySelectorAll("#map .pin").forEach(p=>p.onclick=()=>loadLocation(LOCATIONS.find(l=>l.id===p.dataset.id)));
+}
+
+/* ---------- Drawer ---------- */
+function openDrawer(){document.getElementById("side").classList.add("open");document.getElementById("scrim").classList.add("open");}
+function closeDrawer(){if(window.innerWidth<820){document.getElementById("side").classList.remove("open");document.getElementById("scrim").classList.remove("open");}}
+document.getElementById("btnMenu").onclick=openDrawer;
+document.getElementById("scrim").onclick=closeDrawer;
+
+/* ---------- Nút ---------- */
+document.getElementById("btnReset").onclick=()=>{lon=0;lat=0;gyroBase=null;};
+document.getElementById("btnGyro").onclick=toggleGyro;
+document.getElementById("btnAudio").onclick=()=>speak(current);
+
+/* ---------- QR ---------- */
+function locUrl(id){return location.href.split("#")[0]+"#"+id;}
+function qrDataUrl(text,size){
+  // tạo QR tạm rồi lấy ảnh dataURL (dùng được cả cho modal lẫn khu in)
+  const tmp=document.createElement("div");
+  new QRCode(tmp,{text,width:size,height:size,correctLevel:QRCode.CorrectLevel.M});
+  const img=tmp.querySelector("img"),cv=tmp.querySelector("canvas");
+  return (img&&img.src)||(cv&&cv.toDataURL())||"";
+}
+function openQR(loc){
+  if(!window.QRCode)return alert("Chưa tải được thư viện QR (cần mạng).");
+  document.getElementById("qrTitle").textContent=loc.name;
+  const url=locUrl(loc.id);
+  document.getElementById("qrBox").innerHTML=`<img src="${qrDataUrl(url,210)}" width="210" height="210" alt="QR">`;
+  document.getElementById("qrSub").textContent=url;
+  document.getElementById("qrModal").classList.add("open");
+}
+document.getElementById("btnQR").onclick=()=>openQR(current);
+document.getElementById("qrClose").onclick=()=>document.getElementById("qrModal").classList.remove("open");
+document.getElementById("qrModal").addEventListener("click",e=>{if(e.target.id==="qrModal")e.currentTarget.classList.remove("open");});
+
+function printSheet(list){
+  const cells=list.map(l=>`<div class="pa-cell">
+      <h3>${l.type==="event"?"⭐ ":""}${l.name}</h3>
+      <div class="y">${l.year}</div>
+      <img src="${qrDataUrl(locUrl(l.id),300)}" alt="QR">
+      <div class="q">Quét để xem tour 360°</div>
+    </div>`).join("");
+  document.getElementById("printArea").innerHTML=`
+    <div class="pa-head">
+      <h1>BK360 – Hành trình 70 năm</h1>
+      <p>Đại học Bách khoa Hà Nội · 1956–2026 · Quét mã QR để tham quan ảo 360°</p>
+    </div>
+    <div class="pa-grid">${cells}</div>`;
+  window.print();
+}
+document.getElementById("qrPrintOne").onclick=()=>printSheet([current]);
+document.getElementById("qrPrintAll").onclick=()=>printSheet(LOCATIONS);
+
+/* ============================================================
+   Màn hình & chế độ: welcome / map2d / event
+   ============================================================ */
+let BUILDINGS=[
+  {id:"library",type:"rect",    x:400,y:120,w:170,h:175,label:"Thư viện Tạ Quang Bửu"},
+  {id:"c1",     type:"rect",    x:120,y:330,w:165,h:130,label:"Tòa C1"},
+  {id:"stadium",type:"stadium", cx:500,cy:520,rx:140,ry:92,label:"Sân vận động"},
+  {id:"c2",     type:"rect",    x:140,y:600,w:185,h:115,label:"Hội trường C2"},
+  {id:"parabol",type:"arch",    cx:150,cy:170,label:"Cổng Parabol"},
+];
+/* Mỗi "chiến dịch sự kiện" có thể bật/tắt và có lịch trình riêng. Admin thêm/sửa được. */
+let CAMPAIGNS=[
+  {id:"anniv70",name:"Sự kiện 70 năm",icon:"⭐",enabled:true,schedule:[
+    {time:"08:00",title:"Lễ khai mạc 70 năm",loc:"stadium",live:true},
+    {time:"09:30",title:"Triển lãm \"Xưa & Nay\"",loc:"library",live:true},
+    {time:"10:30",title:"Tọa đàm cựu sinh viên",loc:"c2",live:false},
+    {time:"14:00",title:"Tham quan phòng truyền thống",loc:"c1",live:false},
+    {time:"16:00",title:"Check-in Cổng Parabol",loc:"parabol",live:false},
+    {time:"19:30",title:"Đêm Gala hội ngộ",loc:"stadium",live:false},
+  ]},
+  {id:"homecoming",name:"BK – Ngày trở về",icon:"🎓",enabled:false,schedule:[
+    {time:"08:30",title:"Đón tiếp cựu sinh viên",loc:"parabol",live:false},
+    {time:"10:00",title:"Gặp mặt theo khoá tại Hội trường",loc:"c2",live:false},
+    {time:"15:00",title:"Tham quan thư viện mới",loc:"library",live:false},
+  ]},
+];
+let activeCampaignId=null;
+function enabledCampaigns(){return CAMPAIGNS.filter(c=>c.enabled);}
+function activeCampaign(){
+  let c=CAMPAIGNS.find(x=>x.id===activeCampaignId&&x.enabled);
+  if(!c)c=enabledCampaigns()[0];
+  return c||null;
+}
+
+function bgeom(b){
+  if(b.type==="rect")    return {cx:b.x+b.w/2,cy:b.y+b.h/2,laby:b.y+b.h+26};
+  if(b.type==="stadium") return {cx:b.cx,cy:b.cy,laby:b.cy+b.ry+26};
+  return {cx:b.cx,cy:b.cy,laby:b.cy+82}; // arch
+}
+function bshape(b){
+  if(b.type==="rect")    return `<rect class="shape" x="${b.x}" y="${b.y}" width="${b.w}" height="${b.h}" rx="10"/>`;
+  if(b.type==="stadium") return `<ellipse class="shape" cx="${b.cx}" cy="${b.cy}" rx="${b.rx}" ry="${b.ry}"/>`;
+  const c=b.cx,y=b.cy; // arch (Cổng Parabol)
+  return `<path class="shape" d="M ${c-58} ${y+72} L ${c-58} ${y-12} Q ${c} ${y-98} ${c+58} ${y-12} L ${c+58} ${y+72} L ${c+34} ${y+72} L ${c+34} ${y+2} Q ${c} ${y-58} ${c-34} ${y+2} L ${c-34} ${y+72} Z"/>`;
+}
+const DECOR=`
+  <path class="road" d="M 150 250 V 800"/>
+  <path class="road" d="M 150 410 H 660"/>
+  <path class="road" d="M 485 250 V 660"/>
+  <ellipse class="green" cx="560" cy="370" rx="140" ry="80"/>
+  <ellipse class="green" cx="300" cy="540" rx="120" ry="70"/>
+  <ellipse class="green" cx="120" cy="760" rx="120" ry="70"/>`;
+function signalMarkup(cx,cy){
+  return `<g pointer-events="none">
+    <circle cx="${cx}" cy="${cy}" r="16" fill="none" stroke="#16a34a" stroke-width="4">
+      <animate attributeName="r" values="16;62" dur="1.8s" repeatCount="indefinite"/>
+      <animate attributeName="opacity" values="0.85;0" dur="1.8s" repeatCount="indefinite"/></circle>
+    <circle cx="${cx}" cy="${cy}" r="16" fill="#16a34a" stroke="#fff" stroke-width="2"/>
+    <text x="${cx}" y="${cy+5}" text-anchor="middle" font-size="16">📡</text>
+    <text class="siglab" x="${cx}" y="${cy-28}">● LIVE</text></g>`;
+}
+function buildCampus(mode){
+  let s=DECOR;
+  const camp=mode==="event"?activeCampaign():null;
+  const eventLocs=new Set(camp?camp.schedule.map(e=>e.loc):[]);
+  const liveLocs=new Set(camp?camp.schedule.filter(e=>e.live).map(e=>e.loc):[]);
+  BUILDINGS.forEach(b=>{
+    const loc=LOCATIONS.find(l=>l.id===b.id);
+    if(loc&&loc.hidden)return;                       // điểm bị admin ẩn
+    const g=bgeom(b);
+    const evt=mode==="event"&&eventLocs.has(b.id);
+    s+=`<g class="bld ${evt?"evt":""}" data-id="${b.id}">${bshape(b)}
+        <text class="blab" x="${g.cx}" y="${g.laby}">${b.label||(loc?loc.name:b.id)}</text></g>`;
+  });
+  if(mode==="event") liveLocs.forEach(id=>{const b=BUILDINGS.find(x=>x.id===id);if(!b)return;const g=bgeom(b);s+=signalMarkup(g.cx,g.cy);});
+  return s;
+}
+function renderMap2D(){
+  const svg=document.getElementById("svgMap2d");svg.innerHTML=buildCampus("map");
+  svg.querySelectorAll(".bld").forEach(g=>g.onclick=()=>{
+    svg.querySelectorAll(".bld").forEach(x=>x.classList.remove("sel"));g.classList.add("sel");
+    openInfo(LOCATIONS.find(l=>l.id===g.dataset.id));});
+}
+function renderEvent(){
+  const camp=activeCampaign();
+  if(camp)activeCampaignId=camp.id;
+  const svg=document.getElementById("svgEvent");svg.innerHTML=buildCampus("event");
+  svg.querySelectorAll(".bld").forEach(g=>g.onclick=()=>openEventDetail(LOCATIONS.find(l=>l.id===g.dataset.id)));
+  const liveN=camp?camp.schedule.filter(e=>e.live).length:0;
+  document.getElementById("evHead").textContent=camp?(liveN?liveN+" hoạt động đang diễn ra — chạm tín hiệu 📡":camp.name):"Chưa có sự kiện nào được bật";
+  renderSchedule();
+}
+function renderSchedule(){
+  const sched=document.getElementById("sched");
+  const camp=activeCampaign();
+  if(!camp){sched.innerHTML=`<h3>Sự kiện</h3><p style="color:#64748b;font-size:13px">Hiện chưa có sự kiện nào được bật. Quản trị viên có thể bật trong trang Admin.</p>`;return;}
+  const ens=enabledCampaigns();
+  const tabs=ens.length>1?`<div class="camp-tabs">${ens.map(c=>`<button class="camp-tab ${c.id===camp.id?"on":""}" data-camp="${c.id}">${c.icon} ${c.name}</button>`).join("")}</div>`:"";
+  const tag=e=>e.live?'<div class="live-tag"><span class="live-dot"></span>ĐANG DIỄN RA</div>':'<div class="soon-tag">Sắp diễn ra</div>';
+  sched.innerHTML=tabs+`<h3>Lịch trình · ${camp.name}</h3>`+camp.schedule.map(e=>{const loc=LOCATIONS.find(l=>l.id===e.loc);
+      return `<div class="ev-item" data-loc="${e.loc}"><div class="tm">${e.time}</div>
+        <div class="info"><b>${e.title}</b><span>📍 ${loc?loc.name:e.loc}</span>${tag(e)}</div></div>`;}).join("");
+  sched.querySelectorAll(".camp-tab").forEach(t=>t.onclick=()=>{activeCampaignId=t.dataset.camp;renderEvent();});
+  sched.querySelectorAll(".ev-item").forEach(it=>it.onclick=()=>openEventDetail(LOCATIONS.find(l=>l.id===it.dataset.loc)));
+}
+function openEventDetail(loc){
+  if(!loc)return;
+  const camp=activeCampaign();
+  const items=camp?camp.schedule.filter(e=>e.loc===loc.id):[];
+  document.getElementById("infoTitle").textContent=loc.name;
+  const list=items.length?items.map(e=>`<div class="ev-item" style="cursor:default">
+      <div class="tm">${e.time}</div><div class="info"><b>${e.title}</b>
+      ${e.live?'<div class="live-tag"><span class="live-dot"></span>ĐANG DIỄN RA</div>':'<div class="soon-tag">Sắp diễn ra</div>'}</div></div>`).join("")
+    :"<p>Chưa có sự kiện tại điểm này.</p>";
+  document.getElementById("infoBody").innerHTML=`<p>${loc.desc}</p><div class="map-title" style="margin-bottom:8px">Sự kiện tại đây</div>${list}`;
+  document.getElementById("info").classList.add("open");
+}
+function showScreen(name){
+  document.querySelectorAll(".screen").forEach(s=>s.classList.remove("show"));
+  document.getElementById("info").classList.remove("open");
+  document.getElementById("qrModal").classList.remove("open");
+  if(typeof closeDrawer==="function")closeDrawer();
+  if(name!=="vr360"){const el=document.getElementById(name);if(el)el.classList.add("show");}
+  if(name==="map2d")renderMap2D();
+  if(name==="event")renderEvent();
+  if(name==="admin")renderAdmin();
+}
+/* ============================================================
+   ADMIN: đăng nhập + CRUD địa điểm / sự kiện (lưu localStorage)
+   ============================================================ */
+const STORE_KEY="bk360_v1";
+function saveStore(){try{localStorage.setItem(STORE_KEY,JSON.stringify({locations:LOCATIONS,buildings:BUILDINGS,campaigns:CAMPAIGNS}));}catch(e){}}
+function loadStore(){try{const d=JSON.parse(localStorage.getItem(STORE_KEY));if(d){if(d.locations)LOCATIONS=d.locations;if(d.buildings)BUILDINGS=d.buildings;if(d.campaigns)CAMPAIGNS=d.campaigns;}}catch(e){}}
+function esc(s){return String(s==null?"":s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;").replace(/"/g,"&quot;");}
+function val(id){const e=document.getElementById(id);return e?e.value.trim():"";}
+function closeAdminModal(){document.getElementById("adminModal").classList.remove("open");}
+let isAdmin=false, adminTab="loc";
+
+function updateWelcome(){
+  const opt=document.getElementById("optEvent");
+  const ab=document.getElementById("btnAdmin");if(ab)ab.textContent=isAdmin?"🔓":"🔒";
+  if(!opt)return;
+  const ens=enabledCampaigns();
+  opt.style.display=ens.length?"flex":"none";
+  const b=opt.querySelector(".t b"),span=opt.querySelector(".t span");
+  if(b)b.textContent=ens.length===1?ens[0].name:"Sự kiện";
+  if(span)span.textContent=ens.length>1?`${ens.length} sự kiện đang mở — lịch trình & bản đồ tín hiệu.`:(ens[0]?`${ens[0].name} — lịch trình & toà nhà phát tín hiệu.`:"");
+}
+function refreshAll(){
+  if(typeof renderList==="function")renderList();
+  if(typeof renderMap==="function")renderMap();
+  if(document.getElementById("map2d").classList.contains("show"))renderMap2D();
+  if(document.getElementById("event").classList.contains("show"))renderEvent();
+  updateWelcome();
+}
+
+/* ----- login ----- */
+function openLogin(){const m=document.getElementById("loginModal");m.classList.add("open");
+  const pw=document.getElementById("loginPw");pw.value="";setTimeout(()=>pw.focus(),120);}
+function doLogin(){
+  if(val("loginPw")==="bk70"){isAdmin=true;document.getElementById("loginModal").classList.remove("open");updateWelcome();showScreen("admin");}
+  else alert("Sai mật khẩu. (Demo: bk70)");
+}
+
+/* ----- dashboard ----- */
+function renderAdmin(){
+  const c=document.getElementById("adminBody");
+  const tabs=`<div class="atabs">
+    <button class="atab ${adminTab==='loc'?'on':''}" data-t="loc">📍 Địa điểm</button>
+    <button class="atab ${adminTab==='camp'?'on':''}" data-t="camp">⭐ Sự kiện</button></div>`;
+  let body;
+  if(adminTab==="loc"){
+    body=`<button class="aprim" id="addLoc">+ Thêm địa điểm</button>`+LOCATIONS.map(l=>`
+      <div class="arow">
+        <div class="arow-main"><b>${esc(l.name)}</b><span>${esc(l.short||"")} · ${esc(l.year||"")}${l.hidden?" · (đang ẩn)":""}</span></div>
+        <button class="aic" data-act="vis" data-id="${l.id}" title="Hiện/ẩn pin">${l.hidden?"🚫":"👁"}</button>
+        <button class="aic" data-act="edit" data-id="${l.id}" title="Sửa">✏️</button>
+        <button class="aic" data-act="del" data-id="${l.id}" title="Xoá">🗑</button></div>`).join("");
+  }else{
+    body=`<button class="aprim" id="addCamp">+ Thêm sự kiện mới</button>`+CAMPAIGNS.map(c=>`
+      <div class="arow">
+        <div class="arow-main"><b>${esc(c.icon)} ${esc(c.name)}</b><span>${c.schedule.length} hoạt động · ${c.enabled?'<b style="color:#15803d">ĐANG BẬT</b>':"tắt"}</span></div>
+        <label class="aswitch"><input type="checkbox" data-act="toggle" data-id="${c.id}" ${c.enabled?"checked":""}><span></span></label>
+        <button class="aic" data-act="cedit" data-id="${c.id}" title="Sửa lịch">✏️</button>
+        <button class="aic" data-act="cdel" data-id="${c.id}" title="Xoá">🗑</button></div>`).join("");
+  }
+  c.innerHTML=tabs+`<div class="alist">${body}</div>`;
+  c.querySelectorAll(".atab").forEach(t=>t.onclick=()=>{adminTab=t.dataset.t;renderAdmin();});
+  const al=document.getElementById("addLoc");if(al)al.onclick=()=>editLocation(null);
+  const ac=document.getElementById("addCamp");if(ac)ac.onclick=()=>editCampaign(null);
+  c.querySelectorAll("[data-act]").forEach(el=>{
+    const id=el.dataset.id,act=el.dataset.act;
+    if(act==="vis")el.onclick=()=>{const l=LOCATIONS.find(x=>x.id===id);l.hidden=!l.hidden;saveStore();renderAdmin();refreshAll();};
+    if(act==="edit")el.onclick=()=>editLocation(id);
+    if(act==="del")el.onclick=()=>{if(confirm("Xoá địa điểm này?")){LOCATIONS=LOCATIONS.filter(x=>x.id!==id);BUILDINGS=BUILDINGS.filter(x=>x.id!==id);saveStore();renderAdmin();refreshAll();}};
+    if(act==="toggle")el.onchange=()=>{CAMPAIGNS.find(x=>x.id===id).enabled=el.checked;saveStore();renderAdmin();updateWelcome();};
+    if(act==="cedit")el.onclick=()=>editCampaign(id);
+    if(act==="cdel")el.onclick=()=>{if(confirm("Xoá sự kiện này?")){CAMPAIGNS=CAMPAIGNS.filter(x=>x.id!==id);saveStore();renderAdmin();updateWelcome();}};
+  });
+}
+
+/* ----- form: địa điểm ----- */
+function bsetCenter(b,cx,cy){
+  if(b.type==="rect"){b.w=b.w||150;b.h=b.h||120;b.x=cx-b.w/2;b.y=cy-b.h/2;}
+  else{b.cx=cx;b.cy=cy;if(b.type==="stadium"){b.rx=b.rx||120;b.ry=b.ry||80;}}
+}
+function editLocation(id){
+  const isNew=!id, l=isNew?{id:"",name:"",short:"",year:"",type:"spot",desc:"",voice:"",history:[]}:LOCATIONS.find(x=>x.id===id);
+  const b=BUILDINGS.find(x=>x.id===id), g=b?bgeom(b):{cx:360,cy:430};
+  const hist=(l.history||[]).map(h=>`${h.y} | ${h.t}`).join("\n");
+  document.getElementById("amBody").innerHTML=`
+    <h3 class="am-ttl">${isNew?"Thêm địa điểm":"Sửa: "+esc(l.name)}</h3>
+    <label>Mã (id, không dấu)</label><input id="f_id" value="${esc(l.id)}" ${isNew?"":"readonly"}>
+    <label>Tên hiển thị</label><input id="f_name" value="${esc(l.name)}">
+    <label>Nhãn ngắn</label><input id="f_short" value="${esc(l.short||"")}">
+    <label>Năm / chú thích</label><input id="f_year" value="${esc(l.year||"")}">
+    <label>Loại</label><select id="f_type"><option value="spot" ${l.type!=="event"?"selected":""}>Địa điểm</option><option value="event" ${l.type==="event"?"selected":""}>Điểm sự kiện</option></select>
+    <div class="frow"><div><label>Vị trí X (0–720)</label><input id="f_cx" type="number" value="${Math.round(g.cx)}"></div><div><label>Vị trí Y (0–860)</label><input id="f_cy" type="number" value="${Math.round(g.cy)}"></div></div>
+    <label>Mô tả</label><textarea id="f_desc" rows="3">${esc(l.desc||"")}</textarea>
+    <label>Lời thuyết minh (voice) — trống = dùng Mô tả</label><textarea id="f_voice" rows="3">${esc(l.voice||"")}</textarea>
+    <button class="asec" id="f_try" type="button">▶ Nghe thử</button>
+    <label>Dòng thời gian — mỗi dòng: <b>năm | nội dung</b></label><textarea id="f_hist" rows="4">${esc(hist)}</textarea>
+    <div class="am-acts"><button class="aprim" id="f_save">Lưu</button><button class="asec" id="f_cancel">Huỷ</button></div>`;
+  document.getElementById("adminModal").classList.add("open");
+  document.getElementById("f_try").onclick=()=>speak({voice:val("f_voice")||val("f_desc"),name:val("f_name")});
+  document.getElementById("f_cancel").onclick=closeAdminModal;
+  document.getElementById("f_save").onclick=()=>saveLocation(isNew,id);
+}
+function saveLocation(isNew,oldId){
+  const id=val("f_id");if(!id)return alert("Cần nhập mã (id).");
+  if(isNew&&LOCATIONS.some(l=>l.id===id))return alert("Mã đã tồn tại.");
+  const cx=Math.max(0,Math.min(720,+val("f_cx")||360)), cy=Math.max(0,Math.min(860,+val("f_cy")||430));
+  const history=val("f_hist").split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{const i=s.indexOf("|");return i<0?{y:"",t:s}:{y:s.slice(0,i).trim(),t:s.slice(i+1).trim()};});
+  const data={id,name:val("f_name")||id,short:val("f_short"),year:val("f_year"),type:val("f_type"),
+    desc:val("f_desc"),voice:val("f_voice"),history,map:[Math.round(cx/720*290)+15,Math.round(cy/860*180)+12]};
+  if(isNew){LOCATIONS.push({...data,palette:{sky:"#9cc4ec",ground:"#7d8a6a",bld:"#0a3d62"},links:[]});}
+  else Object.assign(LOCATIONS.find(l=>l.id===oldId),data);
+  let b=BUILDINGS.find(x=>x.id===id);
+  if(!b){b={id,type:"rect"};BUILDINGS.push(b);}
+  b.label=data.name;bsetCenter(b,cx,cy);
+  saveStore();closeAdminModal();renderAdmin();refreshAll();
+}
+
+/* ----- form: sự kiện ----- */
+function editCampaign(id){
+  const isNew=!id, c=isNew?{id:"",name:"",icon:"📅",enabled:true,schedule:[]}:CAMPAIGNS.find(x=>x.id===id);
+  const sched=c.schedule.map(e=>`${e.time} | ${e.title} | ${e.loc} | ${e.live?1:0}`).join("\n");
+  const ids=LOCATIONS.map(l=>`${l.id} = ${l.name}`).join("<br>");
+  document.getElementById("amBody").innerHTML=`
+    <h3 class="am-ttl">${isNew?"Thêm sự kiện mới":"Sửa: "+esc(c.name)}</h3>
+    <label>Mã (id)</label><input id="c_id" value="${esc(c.id)}" ${isNew?"":"readonly"} placeholder="vd: khaigiang">
+    <div class="frow"><div style="flex:0 0 80px"><label>Icon</label><input id="c_icon" value="${esc(c.icon)}"></div><div><label>Tên sự kiện</label><input id="c_name" value="${esc(c.name)}" placeholder="vd: Lễ Khai giảng"></div></div>
+    <label>Lịch trình — mỗi dòng: <b>giờ | tiêu đề | mã địa điểm | live(1/0)</b></label>
+    <textarea id="c_sched" rows="7">${esc(sched)}</textarea>
+    <div class="hint-box"><b>Mã địa điểm khả dụng:</b><br>${ids}</div>
+    <div class="am-acts"><button class="aprim" id="c_save">Lưu</button><button class="asec" id="c_cancel">Huỷ</button></div>`;
+  document.getElementById("adminModal").classList.add("open");
+  document.getElementById("c_cancel").onclick=closeAdminModal;
+  document.getElementById("c_save").onclick=()=>saveCampaign(isNew,id);
+}
+function saveCampaign(isNew,oldId){
+  const id=val("c_id");if(!id)return alert("Cần nhập mã.");
+  if(isNew&&CAMPAIGNS.some(c=>c.id===id))return alert("Mã đã tồn tại.");
+  const schedule=val("c_sched").split("\n").map(s=>s.trim()).filter(Boolean).map(s=>{const p=s.split("|").map(x=>x.trim());return{time:p[0]||"",title:p[1]||"",loc:p[2]||"",live:p[3]==="1"};});
+  const data={id,name:val("c_name")||id,icon:val("c_icon")||"📅",schedule};
+  if(isNew)CAMPAIGNS.push({...data,enabled:true});
+  else Object.assign(CAMPAIGNS.find(c=>c.id===oldId),data);
+  saveStore();closeAdminModal();renderAdmin();updateWelcome();
+}
+
+function wireScreens(){
+  loadStore();
+  document.querySelectorAll("[data-go]").forEach(el=>el.addEventListener("click",()=>showScreen(el.dataset.go)));
+  const bh=document.getElementById("btnHome");if(bh)bh.onclick=()=>showScreen("welcome");
+  const wbg=document.getElementById("wbg");if(wbg)wbg.style.backgroundImage="url('pano-parabol.jpg')";
+  const ba=document.getElementById("btnAdmin");if(ba)ba.onclick=()=>{isAdmin?showScreen("admin"):openLogin();};
+  document.getElementById("amCls").onclick=closeAdminModal;
+  document.getElementById("adminModal").addEventListener("click",e=>{if(e.target.id==="adminModal")closeAdminModal();});
+  document.getElementById("loginBtn").onclick=doLogin;
+  document.getElementById("loginCancel").onclick=()=>document.getElementById("loginModal").classList.remove("open");
+  document.getElementById("loginPw").addEventListener("keydown",e=>{if(e.key==="Enter")doLogin();});
+  updateWelcome();
+}
+wireScreens();
+
+/* ---------- Boot ---------- */
+(function boot(n){
+  if(window.THREE)initThree();
+  else if(n<60)setTimeout(()=>boot(n+1),100);
+  else document.getElementById("loading").textContent="Không tải được Three.js (cần mạng để lấy CDN).";
+})(0);
+</script>
+</body>
+</html>
