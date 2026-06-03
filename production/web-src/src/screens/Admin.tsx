@@ -34,15 +34,26 @@ const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const MAP_W = 1250;
 const MAP_H = 1070;
 
-const NAVS = [
-  { id: 'overview', icon: '🏠', label: 'Tổng quan' },
-  { id: 'locations', icon: '📍', label: 'Địa điểm' },
-  { id: 'map', icon: '🗺️', label: 'Bản đồ nền' },
-  { id: 'vr360', icon: '🌐', label: 'VR360' },
-  { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
-  { id: 'import', icon: '📥', label: 'Nhập liệu' },
+// Sidebar gom nhóm theo chức năng.
+const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
+  { items: [{ id: 'overview', icon: '🏠', label: 'Tổng quan' }] },
+  {
+    title: 'Nội dung',
+    items: [
+      { id: 'locations', icon: '📍', label: 'Địa điểm' },
+      { id: 'map', icon: '🗺️', label: 'Bản đồ nền' },
+      { id: 'vr360', icon: '🌐', label: 'VR360' },
+      { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
+    ],
+  },
+  {
+    title: 'Hệ thống',
+    items: [
+      { id: 'import', icon: '📥', label: 'Nhập liệu' },
+      { id: 'users', icon: '👥', label: 'Người dùng', super: true },
+    ],
+  },
 ];
-const NAV_USERS = { id: 'users', icon: '👥', label: 'Người dùng' };
 
 // Tỉ lệ khung khuyến nghị theo loại ảnh (để CẢNH BÁO khi lệch — không chặn).
 const RATIO_EXP: Record<string, { r: number; label: string }> = {
@@ -108,17 +119,23 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
   };
   useEffect(() => { reload(); }, []);
   const logout = async () => { await api.logout().catch(() => {}); setToken(null); setUser(null); onBack(); };
-  const navs = user.role === 'SUPERADMIN' ? [...NAVS, NAV_USERS] : NAVS;
-  const label = navs.find((n) => n.id === nav)?.label || '';
+  const isSuper = user.role === 'SUPERADMIN';
+  const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.super || isSuper) })).filter((g) => g.items.length);
+  const label = groups.flatMap((g) => g.items).find((n) => n.id === nav)?.label || '';
 
   return (
     <div className="adm-shell">
       <aside className="adm-side">
         <div className="adm-brand">BK360 · Quản trị</div>
-        {navs.map((n) => (
-          <button key={n.id} className={nav === n.id ? 'on' : ''} onClick={() => setNav(n.id)}>
-            <span>{n.icon}</span> {n.label}
-          </button>
+        {groups.map((g, gi) => (
+          <div className="adm-grp" key={gi}>
+            {g.title && <div className="adm-grp-title">{g.title}</div>}
+            {g.items.map((n) => (
+              <button key={n.id} className={nav === n.id ? 'on' : ''} onClick={() => setNav(n.id)}>
+                <span>{n.icon}</span> {n.label}
+              </button>
+            ))}
+          </div>
         ))}
         <div className="adm-spacer" />
         <button onClick={onBack}>↩ Về trang xem</button>
