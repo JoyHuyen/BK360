@@ -62,6 +62,9 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
 }
 
 // Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
+// Nhãn vai trò ngắn hiển thị dưới logo.
+const ROLE_SHORT: Record<string, string> = { SUPERADMIN: 'Quản trị', EDITOR: 'Biên tập viên', VIEWER: 'Người xem' };
+
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
   { items: [
     { id: 'welcome', icon: 'home', label: 'Trang chào' },
@@ -164,7 +167,7 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
       <aside className="adm-side">
         <div className="adm-brand">
           <span className="adm-logo">BK</span>
-          <span className="brand-txt">BK360<small>Quản trị</small></span>
+          <span className="brand-txt">BK360<small>{ROLE_SHORT[user.role] || 'Quản trị'}</small></span>
         </div>
         {groups.map((g, gi) => (
           <div className="adm-grp" key={gi}>
@@ -181,7 +184,7 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         <button onClick={logout}><NavIcon name="logout" /><span className="lbl">Đăng xuất</span></button>
       </aside>
       <main className="adm-main">
-        <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
+        <div className="adm-top"><b>{label}</b><span>{user.email} · {ROLE_SHORT[user.role] || user.role}</span></div>
         {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
         {nav === 'welcome' && <WelcomePanel welcome={project?.welcome} reload={reload} />}
         {nav === 'locations' && <LocationsPanel locs={locs} mapBg={project?.mapBg} reload={reload} />}
