@@ -1,7 +1,8 @@
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { api, setToken } from '../api';
-import type { Lang, Location, Campaign, User, Project, Vr360Config } from '../types';
+import type { Lang, Location, Campaign, User, Project, Vr360Config, Scene } from '../types';
+import Panorama from '../components/Panorama';
 
 /* ---------- helpers: chuẩn hoá link Drive/OneDrive ---------- */
 function driveId(u: string) {
@@ -699,30 +700,27 @@ function MapPanel({ mapBg, reload }: any) {
 
 /* ===================== VR360 ===================== */
 function VR360Panel({ locs, vr360, reload }: any) {
-  const [list, setList] = useState<Location[]>([]);
+  const [scenes, setScenes] = useState<Scene[]>([]);
+  const [edit, setEdit] = useState<Scene | 'new' | null>(null);
   const [cfg, setCfg] = useState<Vr360Config>({ autorotate: false, speed: 6, startSlug: null });
   const [msg, setMsg] = useState('');
-  useEffect(() => { setList([...locs].sort((a: Location, b: Location) => (a.order || 0) - (b.order || 0))); }, [locs]);
+  const load = async () => { try { setScenes(await api.adminScenes()); } catch (e: any) { setMsg(e.message); } };
+  useEffect(() => { load(); }, []);
   useEffect(() => { setCfg({ autorotate: vr360?.autorotate ?? false, speed: vr360?.speed ?? 6, startSlug: vr360?.startSlug ?? null }); }, [vr360]);
 
   const saveCfg = async (next: Vr360Config) => {
-    setCfg(next); setMsg('Đang lưu…');
+    setCfg(next);
     try { await api.updateProject({ vr360: next }); setMsg('Đã lưu cấu hình ✓'); reload(); }
     catch (e: any) { setMsg('Lỗi: ' + e.message); }
   };
-  const persistOrder = async (nl: Location[]) => {
-    const ups = nl.map((l, i) => (l.order !== i ? api.updateLocation(l.id, { order: i }) : null)).filter(Boolean);
-    if (ups.length) { try { await Promise.all(ups as any); reload(); } catch (e: any) { setMsg('Lỗi: ' + e.message); } }
-  };
   const move = async (i: number, dir: number) => {
-    const j = i + dir; if (j < 0 || j >= list.length) return;
-    const nl = [...list]; [nl[i], nl[j]] = [nl[j], nl[i]]; setList(nl); await persistOrder(nl);
+    const j = i + dir; if (j < 0 || j >= scenes.length) return;
+    const nl = [...scenes]; [nl[i], nl[j]] = [nl[j], nl[i]]; setScenes(nl);
+    const ups = nl.map((s, k) => (s.order !== k ? api.updateScene(s.id, { order: k }) : null)).filter(Boolean);
+    try { await Promise.all(ups as any); load(); reload(); } catch (e: any) { setMsg('Lỗi: ' + e.message); }
   };
-  const patchSettings = async (l: Location, patch: any) => {
-    const s = { ...(l.settings || {}), ...patch };
-    try { await api.updateLocation(l.id, { settings: s }); reload(); } catch (e: any) { setMsg('Lỗi: ' + e.message); }
-  };
-  const inTour = list.filter((l) => !l.isHidden && !l.settings?.vrExclude);
+  const toggle = async (s: Scene) => { await api.updateScene(s.id, { enabled: !s.enabled }); load(); reload(); };
+  const del = async (s: Scene) => { if (confirm('Xoá điểm 360 "' + (s.title?.vi || s.slug) + '"?')) { await api.deleteScene(s.id); load(); reload(); } };
 
   return (
     <div className="adm-body">
@@ -736,54 +734,153 @@ function VR360Panel({ locs, vr360, reload }: any) {
           <div style={{ maxWidth: 220, marginTop: 8 }}>
             <label title="Tốc độ tự xoay, độ/giây (3–15 hợp lý)">Tốc độ xoay (độ/giây)</label>
             <input type="number" min={1} max={30} value={cfg.speed ?? 6}
-              onChange={(e) => setCfg({ ...cfg, speed: Number(e.target.value) })}
-              onBlur={() => saveCfg(cfg)} />
+              onChange={(e) => setCfg({ ...cfg, speed: Number(e.target.value) })} onBlur={() => saveCfg(cfg)} />
           </div>
         )}
         <div style={{ marginTop: 10 }}>
-          <label title="Điểm dừng hiển thị đầu tiên khi mở VR360">Điểm bắt đầu <span className="hint-q" title="Điểm dừng hiển thị đầu tiên khi mở VR360">ⓘ</span></label>
+          <label title="Điểm 360 hiển thị đầu tiên khi mở VR360">Điểm bắt đầu <span className="hint-q" title="Điểm 360 hiển thị đầu tiên khi mở VR360">ⓘ</span></label>
           <select value={cfg.startSlug || ''} onChange={(e) => saveCfg({ ...cfg, startSlug: e.target.value || null })}>
             <option value="">(Điểm đầu danh sách)</option>
-            {inTour.map((l) => <option key={l.id} value={l.slug}>{l.i18n?.vi?.name || l.slug}</option>)}
+            {scenes.map((s) => <option key={s.id} value={s.slug}>{s.title?.vi || s.slug}</option>)}
           </select>
         </div>
         {msg && <div className="msg" style={{ marginTop: 8 }}>{msg}</div>}
       </div>
 
       <div className="adm-card">
-        <h4 style={{ margin: '0 0 4px' }}>Điểm dừng & thứ tự ({inTour.length} trong tour)</h4>
-        <p className="muted" style={{ marginTop: 0 }}>Dùng ▲▼ để sắp thứ tự. Tắt "Trong tour" để ẩn riêng khỏi VR360 (vẫn hiện trên bản đồ 2D). Góc nhìn = hướng nhìn ban đầu (độ).</p>
-        <div className="vr-list">
-          {list.map((l, i) => {
-            const has360 = !!(l.links && l.links.pano360);
-            const excluded = !!l.settings?.vrExclude;
-            return (
-              <div className={'vr-row' + (excluded || l.isHidden ? ' off' : '')} key={l.id}>
-                <div className="vr-ord">
-                  <button className="aic" disabled={i === 0} onClick={() => move(i, -1)} title="Lên">▲</button>
-                  <button className="aic" disabled={i === list.length - 1} onClick={() => move(i, 1)} title="Xuống">▼</button>
-                </div>
-                <div className="vr-main">
-                  <b>{l.i18n?.vi?.name || l.slug}</b>
-                  <span>
-                    {l.isHidden && <span className="miss-tag">đang ẩn</span>}
-                    {!has360 && <span className="miss-tag">chưa có 360°</span>}
-                    {has360 && <span className="ok-tag">✓ 360°</span>}
-                  </span>
-                </div>
-                <label className="vr-yaw" title="Hướng nhìn ban đầu khi vào ảnh 360° (độ, 0–360)">
-                  góc
-                  <input type="number" placeholder="0" defaultValue={l.settings?.vrYaw ?? ''}
-                    onBlur={(e) => patchSettings(l, { vrYaw: e.target.value === '' ? undefined : Number(e.target.value) })} />
-                </label>
-                <label className="chk-row" title="Bật = nằm trong tour VR360">
-                  <input type="checkbox" checked={!excluded} onChange={() => patchSettings(l, { vrExclude: !excluded })} />
-                  <span>Trong tour</span>
-                </label>
-              </div>
-            );
-          })}
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h4 style={{ margin: 0, flex: 1 }}>Điểm 360 (Scene) — {scenes.length}</h4>
+          <button className="aprim" onClick={() => setEdit('new')}>+ Thêm điểm 360</button>
         </div>
+        <p className="muted">Mỗi điểm là một ảnh 360°. Thêm nhiều điểm (kể cả lối đi, góc sân) để tour mượt; đặt <b>mũi tên</b> trong ảnh để đi sang điểm khác. ▲▼ sắp thứ tự.</p>
+        {scenes.length === 0 && <p className="muted">Chưa có điểm 360 — VR360 đang <b>tạm dùng</b> các địa điểm có ảnh 360. Thêm điểm 360 để bật chế độ tour Street View.</p>}
+        <div className="vr-list">
+          {scenes.map((s, i) => (
+            <div className={'vr-row' + (!s.enabled ? ' off' : '')} key={s.id}>
+              <div className="vr-ord">
+                <button className="aic" disabled={i === 0} onClick={() => move(i, -1)} title="Lên">▲</button>
+                <button className="aic" disabled={i === scenes.length - 1} onClick={() => move(i, 1)} title="Xuống">▼</button>
+              </div>
+              <div className="vr-main">
+                <b>{s.title?.vi || s.slug}</b>
+                <span>
+                  {s.pano ? <span className="ok-tag">✓ ảnh 360</span> : <span className="miss-tag">chưa có ảnh</span>}
+                  {(s.hotspots?.length ?? 0) > 0 && <span className="ok-tag">➤ {s.hotspots.length} mũi tên</span>}
+                  {s.locationId && <span className="ok-tag">🔗 địa điểm</span>}
+                </span>
+              </div>
+              <label className="chk-row" title="Bật/tắt hiển thị trong tour">
+                <input type="checkbox" checked={s.enabled} onChange={() => toggle(s)} /><span>Bật</span>
+              </label>
+              <button className="aic" onClick={() => setEdit(s)}>✏️</button>
+              <button className="aic" onClick={() => del(s)}>🗑</button>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {edit && (
+        <SceneEditor scene={edit === 'new' ? null : edit} scenes={scenes} locs={locs}
+          onClose={() => setEdit(null)} onSaved={() => { setEdit(null); load(); reload(); }} />
+      )}
+    </div>
+  );
+}
+
+function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
+  const [f, setF] = useState<any>(() => ({
+    slug: scene?.slug || '', vi: scene?.title?.vi || '', en: scene?.title?.en || '',
+    pano: scene?.pano || '', yaw: scene?.yaw ?? 0, locationId: scene?.locationId || '',
+    enabled: scene ? scene.enabled : true, hotspots: scene?.hotspots ? [...scene.hotspots] : [],
+  }));
+  const [msg, setMsg] = useState('');
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+  const others = (scenes as Scene[]).filter((s) => s.slug !== scene?.slug);
+
+  const uploadPano = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const file = inp.files?.[0]; if (!file) return; setMsg('Đang tải ảnh 360…');
+      try { const r: any = await api.uploadMedia(file, 'PANO360'); set('pano', r?.meta?.optimized || r?.url || ''); setMsg('Đã tải ✓'); }
+      catch (e: any) { setMsg('Lỗi tải: ' + e.message); }
+    };
+    inp.click();
+  };
+  const addHotspot = (yaw: number, pitch: number) =>
+    setF((p: any) => ({ ...p, hotspots: [...p.hotspots, { id: 'h' + (p.hotspots.length + 1) + '-' + yaw + pitch, yaw, pitch, to: '' }] }));
+  const setHs = (i: number, patch: any) => setF((p: any) => { const hs = [...p.hotspots]; hs[i] = { ...hs[i], ...patch }; return { ...p, hotspots: hs }; });
+  const delHs = (i: number) => setF((p: any) => ({ ...p, hotspots: p.hotspots.filter((_: any, k: number) => k !== i) }));
+
+  const save = async () => {
+    if (!f.slug.trim()) { setMsg('Cần nhập mã (slug).'); return; }
+    const payload = {
+      slug: f.slug.trim(), title: { vi: f.vi || f.slug, en: f.en || undefined },
+      pano: f.pano || undefined, yaw: Number(f.yaw) || 0, locationId: f.locationId || null,
+      enabled: f.enabled, hotspots: f.hotspots.filter((h: any) => h.to),
+    };
+    try { if (scene) await api.updateScene(scene.id, payload); else await api.createScene(payload); onSaved(); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+
+  const panoSrc = f.pano ? normalize(f.pano, 'image') : '';
+
+  return (
+    <div className="admin-modal open" onClick={(e: any) => e.target === e.currentTarget && onClose()}>
+      <div className="am-card am-wide">
+        <span className="am-cls" onClick={onClose}>×</span>
+        <h3 className="am-ttl">{scene ? 'Sửa điểm 360' : 'Thêm điểm 360'}</h3>
+        <div className="frow">
+          <div><label title="Mã không dấu, duy nhất. VD: c1-sanh, loi-di-1">Mã (slug)</label>
+            <input value={f.slug} disabled={!!scene} onChange={(e) => set('slug', e.target.value)} placeholder="vd: c1-sanh" /></div>
+          <div><label title="Liên kết tới địa điểm để hiện thông tin/Xưa-Nay khi bấm ℹ️ (tuỳ chọn)">Gắn địa điểm (tuỳ chọn)</label>
+            <select value={f.locationId} onChange={(e) => set('locationId', e.target.value)}>
+              <option value="">(không gắn — chỉ là điểm ngắm/đường đi)</option>
+              {(locs as Location[]).map((l) => <option key={l.id} value={l.id}>{l.i18n?.vi?.name || l.slug}</option>)}
+            </select></div>
+        </div>
+        <div className="frow">
+          <div><label>Tên (vi)</label><input value={f.vi} onChange={(e) => set('vi', e.target.value)} placeholder="vd: Sảnh C1" /></div>
+          <div><label>Tên (en)</label><input value={f.en} onChange={(e) => set('en', e.target.value)} /></div>
+        </div>
+        <label>Ảnh 360° (equirectangular 2:1)</label>
+        <div className="frow">
+          <input value={f.pano} placeholder="Dán link…" onChange={(e) => set('pano', e.target.value)} onBlur={(e) => set('pano', normalize(e.target.value, 'image'))} />
+          <button className="asec" type="button" onClick={uploadPano}>Tải ảnh</button>
+        </div>
+
+        {panoSrc ? (
+          <>
+            <div className="pano-edit-wrap">
+              <div className="pano-edit">
+                <Panorama key={panoSrc} src={panoSrc} fallbackLabel={f.vi || f.slug} lang="vi" editMode hotspots={f.hotspots} onPick={addHotspot} />
+              </div>
+            </div>
+            <div className="hs-edit">
+              <b>Mũi tên di chuyển ({f.hotspots.length})</b>
+              {f.hotspots.length === 0 && <p className="muted" style={{ margin: '4px 0' }}>Bấm lên ảnh để đặt mũi tên, rồi chọn điểm đích.</p>}
+              {f.hotspots.map((h: any, i: number) => (
+                <div className="hs-item" key={h.id || i}>
+                  <span className="muted">#{i + 1} ({Math.round(h.yaw)}°,{Math.round(h.pitch)}°) →</span>
+                  <select value={h.to} onChange={(e) => setHs(i, { to: e.target.value })}>
+                    <option value="">(chọn điểm đích)</option>
+                    {others.map((s) => <option key={s.id} value={s.slug}>{s.title?.vi || s.slug}</option>)}
+                  </select>
+                  <button className="aic" onClick={() => delHs(i)}>🗑</button>
+                </div>
+              ))}
+            </div>
+          </>
+        ) : <p className="muted">Tải/dán ảnh 360 để đặt mũi tên di chuyển.</p>}
+
+        <div className="frow" style={{ marginTop: 8 }}>
+          <div style={{ maxWidth: 160 }}><label title="Hướng nhìn ban đầu (độ)">Góc nhìn ban đầu</label>
+            <input type="number" value={f.yaw} onChange={(e) => set('yaw', e.target.value)} /></div>
+          <label className="chk-row" style={{ alignSelf: 'flex-end', paddingBottom: 8 }}>
+            <input type="checkbox" checked={f.enabled} onChange={(e) => set('enabled', e.target.checked)} /><span>Bật trong tour</span>
+          </label>
+        </div>
+        {msg && <div className="err">{msg}</div>}
+        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
       </div>
     </div>
   );

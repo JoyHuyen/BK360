@@ -19,6 +19,25 @@ export interface LocSettings {
   vrExclude?: boolean; // ẩn riêng khỏi VR360
   vrYaw?: number; // góc nhìn ban đầu (độ)
 }
+
+export interface Hotspot {
+  id: string;
+  yaw: number; // độ, ngang
+  pitch: number; // độ, dọc
+  to: string; // slug scene đích
+  label?: string;
+}
+export interface Scene {
+  id: string;
+  slug: string;
+  title: Record<string, string>;
+  pano?: string | null;
+  yaw?: number | null;
+  order: number;
+  enabled: boolean;
+  hotspots: Hotspot[];
+  locationId?: string | null;
+}
 export interface Media {
   id: string;
   kind: MediaKind;

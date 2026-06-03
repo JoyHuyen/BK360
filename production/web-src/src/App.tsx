@@ -1,6 +1,6 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { api, setToken } from './api';
-import type { Campaign, Lang, Location, Project, Screen, User } from './types';
+import type { Campaign, Lang, Location, Project, Scene, Screen, User } from './types';
 import Welcome from './screens/Welcome';
 import Map2D from './screens/Map2D';
 import EventScreen from './screens/Event';
@@ -19,16 +19,20 @@ export default function App() {
   const [lang, setLang] = useState<Lang>('vi');
   const [locations, setLocations] = useState<Location[]>([]);
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [scenes, setScenes] = useState<Scene[]>([]);
   const [project, setProject] = useState<Project | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
   const loadPublic = useCallback(async () => {
     try {
-      const [locs, camps, proj] = await Promise.all([api.locations(), api.campaigns(), api.project().catch(() => null)]);
+      const [locs, camps, proj, scns] = await Promise.all([
+        api.locations(), api.campaigns(), api.project().catch(() => null), api.scenes().catch(() => []),
+      ]);
       setLocations(locs);
       setCampaigns(camps);
       setProject(proj);
+      setScenes(scns || []);
       setErr(null);
     } catch (e: any) {
       setErr(e.message || 'Không tải được dữ liệu từ API');
@@ -75,7 +79,7 @@ export default function App() {
         <EventScreen campaigns={campaigns} locations={locations} lang={lang} mapBg={project?.mapBg} onBack={() => setScreen('welcome')} />
       )}
       <Suspense fallback={<Loader />}>
-        {screen === 'vr360' && <VR360 locations={locations} lang={lang} vr360={project?.vr360} onBack={() => setScreen('welcome')} />}
+        {screen === 'vr360' && <VR360 scenes={scenes} locations={locations} lang={lang} vr360={project?.vr360} onBack={() => setScreen('welcome')} />}
         {screen === 'admin' && (
           <Admin lang={lang} user={user} setUser={setUser} onBack={() => setScreen('welcome')} reloadPublic={loadPublic} />
         )}

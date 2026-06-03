@@ -8,6 +8,7 @@ import { AuthModule } from './auth/auth.module';
 import { LocationsModule } from './locations/locations.module';
 import { CampaignsModule } from './campaigns/campaigns.module';
 import { MediaModule } from './media/media.module';
+import { ScenesModule } from './scenes/scenes.module';
 import { UsersModule } from './users/users.module';
 import { AuditModule } from './audit/audit.module';
 import { Public } from './common/public.decorator';
@@ -46,6 +47,7 @@ class HealthController {
     LocationsModule,
     CampaignsModule,
     MediaModule,
+    ScenesModule,
     UsersModule,
   ],
   controllers: [HealthController],

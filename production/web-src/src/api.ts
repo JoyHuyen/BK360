@@ -32,6 +32,7 @@ export const api = {
   config: () => req('/config'),
   locations: () => req<Location[]>('/locations'),
   campaigns: () => req<Campaign[]>('/campaigns'),
+  scenes: () => req<import('./types').Scene[]>('/scenes'),
   project: () => req<import('./types').Project | null>('/projects/current'),
   updateProject: (d: { mapBg?: string | null; name?: string; vr360?: import('./types').Vr360Config }) =>
     req('/projects/current', { method: 'PATCH', body: JSON.stringify(d) }),
@@ -95,6 +96,12 @@ export const api = {
   // Kéo link Drive/OneDrive về host trên server
   importMediaUrl: (url: string, kind: string, locationId?: string, lang?: string) =>
     req<any>('/admin/media/import-url', { method: 'POST', body: JSON.stringify({ url, kind, locationId, lang }) }),
+
+  // scenes (VR360)
+  adminScenes: () => req<import('./types').Scene[]>('/admin/scenes'),
+  createScene: (d: any) => req('/admin/scenes', { method: 'POST', body: JSON.stringify(d) }),
+  updateScene: (id: string, d: any) => req(`/admin/scenes/${id}`, { method: 'PUT', body: JSON.stringify(d) }),
+  deleteScene: (id: string) => req(`/admin/scenes/${id}`, { method: 'DELETE' }),
 
   // users (chỉ SUPERADMIN)
   adminUsers: () => req<User[]>('/admin/users'),
