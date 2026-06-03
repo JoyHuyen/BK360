@@ -366,7 +366,7 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
         <span className="cls" onClick={onClose}>×</span>
       </div>
       <div className="tabs">
-        {[['info', 'Thông tin'], ['pos', 'Vị trí'], ['media', 'Media'], ['hist', 'Lịch sử']].map(([k, t]) => (
+        {[['info', 'Thông tin'], ['pos', 'Ghim vị trí trên map'], ['media', 'Hình ảnh & Audio'], ['hist', 'Lịch sử']].map(([k, t]) => (
           <button key={k} className={tab === k ? 'on' : ''} onClick={() => setTab(k)}>{t}</button>
         ))}
       </div>
