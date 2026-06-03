@@ -34,17 +34,23 @@ const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const MAP_W = 1250;
 const MAP_H = 1070;
 
-// Sidebar gom nhóm theo chức năng.
+// Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
   { items: [{ id: 'overview', icon: '🏠', label: 'Tổng quan' }] },
   {
-    title: 'Nội dung',
+    title: 'Bản đồ 2D',
     items: [
       { id: 'locations', icon: '📍', label: 'Địa điểm' },
-      { id: 'map', icon: '🗺️', label: 'Bản đồ nền' },
-      { id: 'vr360', icon: '🌐', label: 'VR360' },
-      { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
+      { id: 'map', icon: '🖼️', label: 'Ảnh nền 2D' },
     ],
+  },
+  {
+    title: 'VR360',
+    items: [{ id: 'vr360', icon: '🌐', label: 'Điểm 360 & tour' }],
+  },
+  {
+    title: 'Sự kiện',
+    items: [{ id: 'campaigns', icon: '⭐', label: 'Lịch sự kiện' }],
   },
   {
     title: 'Hệ thống',
