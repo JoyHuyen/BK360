@@ -53,10 +53,17 @@ Hoặc bấm **Tải file** ngay trong thẻ Media để upload thẳng lên ser
 > 🔴 **Ngày sự kiện (đông người xem):** ưu tiên **Tải file** lên server. Link Google Drive/OneDrive có thể bị Google/Microsoft **chặn khi hàng nghìn người truy cập cùng lúc** → ảnh không hiện.
 > Nếu đã lỡ dán link ngoài: trong thẻ Media bấm **⬇️ Về server** — hệ thống tải file về server 1 lần rồi phục vụ ổn định (ô nào là link ngoài sẽ có nhãn **link ngoài** màu đỏ).
 
-**Gợi ý loại file:**
-- Ảnh Xưa/Nay: JPG/PNG ngang, nên ≥ 1600px.
-- Ảnh 360°: ảnh **equirectangular** (tỉ lệ 2:1, ví dụ 4096×2048).
-- Audio: MP3/M4A.
+**Quy định kích thước ảnh (để hiển thị đẹp nhất):**
+
+| Loại | Tỉ lệ | Kích thước khuyến nghị | Ghi chú |
+|------|-------|------------------------|---------|
+| **Ảnh Xưa & Nay** | **16:10** (ngang) | **1600×1000px** (tối thiểu 1200×750) | Hai ảnh **cùng góc chụp / cùng khung hình** để thanh trượt so sánh khớp. Khung xem cắt giữa nếu sai tỉ lệ. |
+| **Ảnh 360°** | **2:1** | ~**4096×2048px** | Ảnh **equirectangular** (chụp panorama 360°). |
+| **Ảnh nền bản đồ 2D** | ~**5:4** | ~**1250×1070px** | Ảnh sơ đồ khuôn viên (mục Bản đồ nền). |
+| **Audio** | — | < ~10MB | MP3/M4A. |
+
+> Server **tự nén** ảnh về ≤1600px (360° ≤4096px), định dạng WebP — bạn cứ tải bản gốc chất lượng cao, không cần resize thủ công.
+> Trong trang Quản trị, mỗi ô media đều có chú thích kích thước; di chuột vào dấu **ⓘ** để xem hướng dẫn.
 
 ---
 

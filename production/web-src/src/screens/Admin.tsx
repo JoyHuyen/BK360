@@ -290,17 +290,20 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
       <div className="editor-body">
         {tab === 'info' && (
           <>
-            <label>Mã (slug)</label>
-            <input value={f.slug} disabled={!!loc} onChange={(e) => set('slug', e.target.value)} placeholder="vd: c1, library" />
+            {(() => { const slugTip = 'Mã định danh không dấu (chữ thường, số, gạch ngang). Dùng để liên kết với lịch sử/sự kiện. KHÔNG đổi sau khi tạo. VD: c1, library, hoi-truong-c2'; return (
+            <>
+            <label title={slugTip}>Mã (slug) <span className="hint-q" title={slugTip}>ⓘ</span></label>
+            <input value={f.slug} disabled={!!loc} title={slugTip} onChange={(e) => set('slug', e.target.value)} placeholder="vd: c1, library" />
+            </>); })()}
             <div className="frow">
-              <div><label>Loại</label><select value={f.type} onChange={(e) => set('type', e.target.value)}><option value="SPOT">Địa điểm</option><option value="EVENT">Điểm sự kiện</option></select></div>
-              <div><label>Hiển thị</label><select value={f.isHidden ? '1' : '0'} onChange={(e) => set('isHidden', e.target.value === '1')}><option value="0">Hiện</option><option value="1">Ẩn</option></select></div>
+              <div><label title="Địa điểm = toà nhà thường. Điểm sự kiện = nơi gắn với hoạt động (sân lễ…)">Loại <span className="hint-q" title="Địa điểm = toà nhà thường. Điểm sự kiện = nơi gắn với hoạt động (sân lễ…)">ⓘ</span></label><select value={f.type} onChange={(e) => set('type', e.target.value)}><option value="SPOT">Địa điểm</option><option value="EVENT">Điểm sự kiện</option></select></div>
+              <div><label title="Ẩn = không hiển thị trên bản đồ/VR cho người xem (vẫn lưu trong hệ thống)">Hiển thị <span className="hint-q" title="Ẩn = không hiển thị cho người xem (vẫn lưu trong hệ thống)">ⓘ</span></label><select value={f.isHidden ? '1' : '0'} onChange={(e) => set('isHidden', e.target.value === '1')}><option value="0">Hiện</option><option value="1">Ẩn</option></select></div>
             </div>
             <label>Tên (vi)</label><input value={f.vi.name || ''} onChange={(e) => setVi('name', e.target.value)} />
             <label>Tên (en)</label><input value={f.en.name || ''} onChange={(e) => setEn('name', e.target.value)} />
             <div className="frow">
-              <div><label>Nhãn ngắn</label><input value={f.vi.short || ''} onChange={(e) => setVi('short', e.target.value)} /></div>
-              <div><label>Năm/chú thích</label><input value={f.vi.year || ''} onChange={(e) => setVi('year', e.target.value)} /></div>
+              <div><label title="Nhãn ngắn hiển thị ở chip danh sách VR360 (vd: Thư viện, Hội trường)">Nhãn ngắn <span className="hint-q" title="Nhãn ngắn hiển thị ở chip danh sách VR360 (vd: Thư viện, Hội trường)">ⓘ</span></label><input value={f.vi.short || ''} onChange={(e) => setVi('short', e.target.value)} placeholder="vd: Thư viện" /></div>
+              <div><label title="Dòng chú thích nhỏ dưới tên (vd: Khánh thành 2006)">Năm/chú thích <span className="hint-q" title="Dòng chú thích nhỏ dưới tên (vd: Khánh thành 2006)">ⓘ</span></label><input value={f.vi.year || ''} onChange={(e) => setVi('year', e.target.value)} placeholder="vd: Khánh thành 2006" /></div>
             </div>
             <label>Mô tả (vi)</label><textarea rows={3} value={f.vi.description || ''} onChange={(e) => setVi('description', e.target.value)} />
             <label>Mô tả (en)</label><textarea rows={2} value={f.en.description || ''} onChange={(e) => setEn('description', e.target.value)} />
@@ -312,21 +315,36 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
         {tab === 'media' && (
           <>
             <p className="muted">Dán <b>link chia sẻ</b> (Drive/OneDrive — tự chuyển sang link nhúng) hoặc <b>Tải file</b> lên server.</p>
+            <div className="size-box">
+              📐 <b>Kích thước ảnh khuyến nghị (hiển thị đẹp nhất):</b>
+              <ul>
+                <li><b>Ảnh Xưa & Nay:</b> ngang, tỉ lệ <b>16:10</b> — nên <b>1600×1000px</b> (tối thiểu 1200×750). Hai ảnh <b>cùng góc chụp / cùng khung</b> để so sánh khớp. Khung xem sẽ <i>cắt giữa</i> nếu sai tỉ lệ.</li>
+                <li><b>Ảnh 360°:</b> equirectangular tỉ lệ <b>2:1</b> — ~<b>4096×2048px</b>.</li>
+                <li><b>Audio:</b> MP3/M4A, &lt; ~10MB.</li>
+              </ul>
+              Server tự nén ảnh về ≤1600px (360° ≤4096px) định dạng WebP — bạn cứ tải bản gốc chất lượng cao.
+            </div>
             <div className="warn-box">
               ⚠️ <b>Ngày sự kiện đông người xem:</b> ưu tiên <b>Tải file</b> lên server. Link Google Drive/OneDrive
               có thể bị chặn khi hàng nghìn người truy cập. Nếu đã lỡ dán link ngoài, bấm <b>⬇️ Về server</b> để
               hệ thống tải về (chỉ tải 1 lần) rồi phục vụ ổn định từ server.
             </div>
-            {[['old', 'Ảnh Xưa', 'OLD', 'image'], ['now', 'Ảnh Nay', 'NOW', 'image'], ['pano360', 'Ảnh 360°', 'PANO360', 'image'], ['audio', 'Audio thuyết minh', 'AUDIO', 'audio']].map(([key, lbl, mk, kind]) => (
+            {[
+              ['old', 'Ảnh Xưa', 'OLD', 'image', 'Ảnh cũ/lịch sử của địa điểm. Ngang 16:10, nên 1600×1000px — chụp/chọn CÙNG KHUNG với ảnh Nay để thanh trượt so sánh khớp.'],
+              ['now', 'Ảnh Nay', 'NOW', 'image', 'Ảnh hiện tại, CÙNG GÓC CHỤP với ảnh Xưa. Ngang 16:10, ~1600×1000px.'],
+              ['pano360', 'Ảnh 360°', 'PANO360', 'image', 'Ảnh panorama equirectangular (chụp 360°), tỉ lệ 2:1, ~4096×2048px.'],
+              ['audio', 'Audio thuyết minh', 'AUDIO', 'audio', 'File thuyết minh giọng đọc. MP3/M4A, < ~10MB. Nếu để trống, app tự đọc bằng máy từ ô "Thuyết minh".'],
+            ].map(([key, lbl, mk, kind, hint]) => (
               <div className="media-row" key={key}>
-                <label>{lbl} {isExternal(f.links[key]) && <span className="ext-badge" title="Link ngoài — nên kéo về server">link ngoài</span>}</label>
+                <label title={hint}>{lbl} <span className="hint-q" title={hint}>ⓘ</span> {isExternal(f.links[key]) && <span className="ext-badge" title="Link ngoài — nên kéo về server">link ngoài</span>}</label>
                 <div className="frow">
-                  <input value={f.links[key] || ''} placeholder="Dán link…"
+                  <input value={f.links[key] || ''} placeholder="Dán link…" title={hint}
                     onChange={(e) => setLink(key, e.target.value)}
                     onBlur={(e) => setLink(key, normalize(e.target.value, kind as any))} />
-                  {isExternal(f.links[key]) && <button className="asec" type="button" title="Kéo về host trên server" onClick={() => importToServer(mk as string, key as string)}>⬇️ Về server</button>}
-                  <button className="asec" type="button" onClick={() => uploadFile(mk as string, key as string)}>Tải file</button>
+                  {isExternal(f.links[key]) && <button className="asec" type="button" title="Kéo file từ link ngoài về host trên server (chỉ tải 1 lần)" onClick={() => importToServer(mk as string, key as string)}>⬇️ Về server</button>}
+                  <button className="asec" type="button" title="Tải file từ máy lên server (được tối ưu tự động)" onClick={() => uploadFile(mk as string, key as string)}>Tải file</button>
                 </div>
+                <div className="field-hint">{hint}</div>
                 {f.links[key] && kind === 'image' && <img className="media-prev" src={f.links[key]} alt="" onError={(e: any) => (e.target.style.opacity = 0.25)} />}
                 {f.links[key] && kind === 'audio' && <audio controls src={f.links[key]} style={{ width: '100%', marginTop: 6 }} />}
               </div>
@@ -400,8 +418,8 @@ function PinPlacer({ x, y, mapBg, onChange }: any) {
         </svg>
       </div>
       <div className="frow">
-        <div><label>map_x (0–{MAP_W})</label><input type="number" value={x} onChange={(e) => onChange(Math.max(0, Math.min(MAP_W, +e.target.value)), y)} /></div>
-        <div><label>map_y (0–{MAP_H})</label><input type="number" value={y} onChange={(e) => onChange(x, Math.max(0, Math.min(MAP_H, +e.target.value)))} /></div>
+        <div><label title="Toạ độ ngang trên bản đồ (0–1250). Dễ nhất là bấm/kéo pin ở trên thay vì gõ số.">map_x (0–{MAP_W}) <span className="hint-q" title="Toạ độ ngang (0–1250). Nên bấm/kéo pin thay vì gõ số.">ⓘ</span></label><input type="number" value={x} onChange={(e) => onChange(Math.max(0, Math.min(MAP_W, +e.target.value)), y)} /></div>
+        <div><label title="Toạ độ dọc trên bản đồ (0–1070). Dễ nhất là bấm/kéo pin ở trên.">map_y (0–{MAP_H}) <span className="hint-q" title="Toạ độ dọc (0–1070). Nên bấm/kéo pin thay vì gõ số.">ⓘ</span></label><input type="number" value={y} onChange={(e) => onChange(x, Math.max(0, Math.min(MAP_H, +e.target.value)))} /></div>
       </div>
     </>
   );
@@ -446,10 +464,12 @@ function CampaignEditor({ camp, onClose, onSaved }: any) {
       <div className="am-card">
         <span className="am-cls" onClick={onClose}>×</span>
         <h3 className="am-ttl">{camp ? 'Sửa sự kiện' : 'Thêm sự kiện'}</h3>
-        <label>Mã (slug)</label><input value={slug} disabled={!!camp} onChange={(e) => setSlug(e.target.value)} placeholder="vd: khaigiang" />
-        <div className="frow"><div style={{ flex: '0 0 80px' }}><label>Icon</label><input value={icon} onChange={(e) => setIcon(e.target.value)} /></div><div><label>Tên (vi)</label><input value={name} onChange={(e) => setName(e.target.value)} /></div></div>
-        <label>Lịch trình — mỗi dòng: <b>giờ | mã địa điểm | live(1/0) | tiêu đề</b></label>
-        <textarea rows={7} value={sched} onChange={(e) => setSched(e.target.value)} />
+        <label title="Mã định danh sự kiện, không dấu. VD: anniv70, khaigiang">Mã (slug) <span className="hint-q" title="Mã định danh sự kiện, không dấu. VD: anniv70, khaigiang">ⓘ</span></label><input value={slug} disabled={!!camp} onChange={(e) => setSlug(e.target.value)} placeholder="vd: khaigiang" />
+        <div className="frow"><div style={{ flex: '0 0 80px' }}><label title="Biểu tượng emoji hiển thị cạnh tên sự kiện">Icon <span className="hint-q" title="Biểu tượng emoji hiển thị cạnh tên sự kiện">ⓘ</span></label><input value={icon} onChange={(e) => setIcon(e.target.value)} /></div><div><label>Tên (vi)</label><input value={name} onChange={(e) => setName(e.target.value)} /></div></div>
+        <label title="Mỗi hoạt động 1 dòng, ngăn cách bằng dấu | theo thứ tự: giờ | mã địa điểm (slug) | live (1=đang diễn ra/0=chưa) | tiêu đề. VD: 08:00 | stadium | 1 | Lễ khai mạc">
+          Lịch trình — mỗi dòng: <b>giờ | mã địa điểm | live(1/0) | tiêu đề</b> <span className="hint-q" title="VD: 08:00 | stadium | 1 | Lễ khai mạc 70 năm. 'mã địa điểm' chính là slug của địa điểm; live=1 sẽ bật tín hiệu 📡 LIVE trên bản đồ.">ⓘ</span>
+        </label>
+        <textarea rows={7} value={sched} onChange={(e) => setSched(e.target.value)} placeholder="08:00 | stadium | 1 | Lễ khai mạc 70 năm" />
         {err && <div className="err">{err}</div>}
         <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
       </div>
@@ -470,6 +490,7 @@ function downloadTemplate() {
     ['1) Mỗi sheet là một loại dữ liệu. KHÔNG đổi tên sheet và KHÔNG đổi dòng tiêu đề (dòng 2).'],
     ['2) Điền dữ liệu từ dòng 3 trở đi.'],
     ['3) Link ảnh/audio: dán link CHIA SẺ Google Drive hoặc OneDrive (đặt quyền "Ai có link đều xem"). Hệ thống tự chuyển sang link nhúng.'],
+    ['   • Ảnh Xưa & Nay: ngang 16:10, ~1600×1000px, hai ảnh CÙNG góc chụp. • Ảnh 360°: equirectangular 2:1, ~4096×2048px. • Audio: MP3/M4A.'],
     ['4) Toạ độ map_x / map_y: vị trí trên bản đồ, hệ 0–1250 (ngang) và 0–1070 (dọc). Có thể bỏ trống rồi chỉnh bằng cách kéo pin trong trang Quản trị.'],
     ['5) Cột "hien": Có/Không (ẩn–hiện). Cột "bat" (sự kiện): Có/Không. Cột "live"/"dang_dien_ra": Có/Không.'],
     [''],
@@ -724,7 +745,7 @@ function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: ()
         <input value={email} disabled={!!user} onChange={(e) => setEmail(e.target.value)} placeholder="vd: media@bk360.local" />
         <label>Tên hiển thị</label>
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="vd: Nguyễn Văn A" />
-        <label>Vai trò</label>
+        <label title="Biên tập: nhập/sửa nội dung. Quản trị cao nhất: thêm cả tài khoản. Chỉ xem: chỉ đăng nhập xem.">Vai trò <span className="hint-q" title="Biên tập: nhập/sửa nội dung. Quản trị cao nhất: thêm cả tài khoản. Chỉ xem: chỉ đăng nhập xem.">ⓘ</span></label>
         <select value={role} onChange={(e) => setRole(e.target.value)}>
           <option value="EDITOR">Biên tập (đội media)</option>
           <option value="VIEWER">Chỉ xem</option>
