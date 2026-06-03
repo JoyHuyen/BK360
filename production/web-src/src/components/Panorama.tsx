@@ -191,15 +191,20 @@ export default function Panorama({
       <canvas ref={canvasRef} className="pano-canvas" />
       {/* Mũi tên hotspot (Street View) */}
       <div className="hs-layer">
-        {(hotspots || []).map((hs, i) => (
+        {(hotspots || []).map((hs: any, i) => (
           <button
             key={hs.id || i}
             ref={(el) => (markerRefs.current[i] = el)}
             className={'hs-arrow' + (editMode ? ' edit' : '')}
             style={{ display: 'none' }}
             onClick={() => !editMode && onHotspot && onHotspot(hs.to)}
-            title={hs.label || hs.to}
-          >➤</button>
+            title={hs.name || hs.label || hs.to}
+          >
+            <span className="hs-thumb" style={hs.thumb ? { backgroundImage: `url(${hs.thumb})` } : undefined}>
+              {!hs.thumb && '➤'}
+            </span>
+            {(hs.name || hs.label) && <span className="hs-name">{hs.name || hs.label}</span>}
+          </button>
         ))}
       </div>
       {editMode && <div className="pano-edit-hint">👆 Bấm lên ảnh để đặt mũi tên</div>}

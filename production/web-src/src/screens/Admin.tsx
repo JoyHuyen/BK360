@@ -852,7 +852,12 @@ function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
           <>
             <div className="pano-edit-wrap">
               <div className="pano-edit">
-                <Panorama key={panoSrc} src={panoSrc} fallbackLabel={f.vi || f.slug} lang="vi" editMode hotspots={f.hotspots} onPick={addHotspot} />
+                <Panorama key={panoSrc} src={panoSrc} fallbackLabel={f.vi || f.slug} lang="vi" editMode
+                  hotspots={f.hotspots.map((h: any) => {
+                    const t = (scenes as Scene[]).find((x) => x.slug === h.to);
+                    return { ...h, thumb: t?.pano ? normalize(t.pano, 'image') : undefined, name: t ? (t.title?.vi || t.slug) : undefined };
+                  })}
+                  onPick={addHotspot} />
               </div>
             </div>
             <div className="hs-edit">

@@ -87,7 +87,13 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .event .mapstage{flex:0 0 auto;height:52%}
 svg.campus{width:100%;height:100%;display:block}
 .hotspot{cursor:pointer}
-.hotspot:hover circle[fill="transparent"]{fill:rgba(200,16,46,.12)}
+.mk{transition:transform .16s ease}
+.mk-pulse{opacity:0;transform-box:fill-box;transform-origin:center}
+.mk-label{opacity:0;transition:opacity .16s}
+.hotspot:hover .mk-label,.hotspot:focus .mk-label{opacity:1}
+.hotspot:hover .mk{transform:translateY(-4px)}
+.hotspot:hover .mk-pulse{animation:mkpulse 1.3s ease-out infinite}
+@keyframes mkpulse{0%{opacity:.55;transform:scale(.7)}100%{opacity:0;transform:scale(2.6)}}
 .bld{cursor:pointer}
 .bld .shape{fill:#5a7da6;stroke:#fff;stroke-width:2.5;transition:.15s}
 .bld:hover .shape{fill:var(--bk-red)}
@@ -282,9 +288,12 @@ svg.campus{width:100%;height:100%;display:block}
 /* Street View — hotspot + biên tập scene */
 .am-card.am-wide{width:680px}
 .hs-layer{position:absolute;inset:0;pointer-events:none;z-index:5}
-.hs-arrow{position:absolute;display:none;align-items:center;justify-content:center;width:46px;height:46px;border-radius:50%;border:2px solid #fff;background:rgba(200,16,46,.88);color:#fff;font-size:22px;cursor:pointer;pointer-events:auto;box-shadow:0 2px 10px rgba(0,0,0,.5);animation:hspulse 1.6s ease-in-out infinite}
-.hs-arrow.edit{background:rgba(63,143,208,.92);cursor:default}
-@keyframes hspulse{0%,100%{transform:translate(-50%,-50%) scale(1)}50%{transform:translate(-50%,-50%) scale(1.14)}}
+.hs-arrow{position:absolute;display:none;flex-direction:column;align-items:center;gap:6px;transform:translate(-50%,-50%);pointer-events:auto;cursor:pointer;background:none;border:none;padding:0}
+.hs-arrow .hs-thumb{display:flex;align-items:center;justify-content:center;width:62px;height:62px;border-radius:50%;border:3px solid #fff;background:#9fb0c2 center/cover no-repeat;color:#fff;font-size:24px;box-shadow:0 4px 16px rgba(0,0,0,.55);transition:.15s;animation:hsbob 2s ease-in-out infinite}
+.hs-arrow:hover .hs-thumb{border-color:var(--gold);transform:scale(1.06)}
+.hs-arrow .hs-name{max-width:140px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:rgba(255,255,255,.95);color:#1d2b40;font-size:12px;font-weight:700;padding:3px 10px;border-radius:20px;box-shadow:0 2px 8px rgba(0,0,0,.4)}
+.hs-arrow.edit{cursor:default}
+@keyframes hsbob{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-3px) scale(1.04)}}
 .vr-nav{position:absolute;top:50%;transform:translateY(-50%);z-index:4;width:44px;height:44px;border-radius:50%;background:rgba(8,22,40,.55);color:#fff;border:1px solid rgba(255,255,255,.3);font-size:26px;line-height:1;cursor:pointer;backdrop-filter:blur(3px)}
 .vr-nav.prev{left:10px}.vr-nav.next{right:10px}
 .pano-edit-hint{position:absolute;top:10px;left:50%;transform:translateX(-50%);background:rgba(8,22,40,.82);color:#fff;font-size:12px;padding:6px 12px;border-radius:20px;z-index:6;white-space:nowrap}

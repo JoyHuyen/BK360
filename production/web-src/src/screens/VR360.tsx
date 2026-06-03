@@ -1,5 +1,5 @@
 import { useRef, useState } from 'react';
-import type { Lang, Location, Scene, Vr360Config, Hotspot } from '../types';
+import type { Lang, Location, Scene, Vr360Config } from '../types';
 import { tx } from '../i18n';
 import { mediaUrl } from '../generate';
 import Panorama from '../components/Panorama';
@@ -11,7 +11,7 @@ interface Stop {
   label: string;
   palette?: any;
   yaw?: number;
-  hotspots: Hotspot[];
+  hotspots: any[];
   loc?: Location;
 }
 
@@ -44,7 +44,11 @@ export default function VR360({
           src: s.pano,
           label: s.title?.[lang] || s.title?.vi || s.slug,
           yaw: s.yaw ?? undefined,
-          hotspots: s.hotspots || [],
+          // gắn thumbnail + tên cảnh đích cho mỗi mũi tên
+          hotspots: (s.hotspots || []).map((h) => {
+            const t = scenes.find((x) => x.slug === h.to);
+            return { ...h, thumb: t?.pano || undefined, name: t ? (t.title?.[lang] || t.title?.vi || t.slug) : h.label };
+          }),
           loc: locations.find((l) => l.id === s.locationId),
         }))
     : locations

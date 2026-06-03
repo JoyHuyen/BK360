@@ -22,19 +22,21 @@ function Signal({ cx, cy }: { cx: number; cy: number }) {
   );
 }
 
-// Pin đánh dấu địa điểm có thông tin (gợi ý chạm được).
-function Pin({ cx, cy, evt }: { cx: number; cy: number; evt?: boolean }) {
+// Điểm đánh dấu địa điểm có thông tin: vòng tròn trắng + chấm + nhãn tên.
+// Hover (lớp .hotspot) → nhún lên + vòng lan toả (CSS).
+function Marker({ cx, cy, name, evt }: { cx: number; cy: number; name: string; evt?: boolean }) {
   const color = evt ? '#f5b301' : '#c8102e';
+  const w = Math.min(220, Math.max(60, name.length * 13 + 22));
+  const ly = cy + 26; // nhãn dưới vòng tròn
   return (
-    <g pointerEvents="none">
-      <ellipse cx={cx} cy={cy + 2} rx={9} ry={3} fill="rgba(0,0,0,.25)" />
-      <path
-        d={`M ${cx} ${cy} C ${cx - 13} ${cy - 18} ${cx - 11} ${cy - 36} ${cx} ${cy - 36} C ${cx + 11} ${cy - 36} ${cx + 13} ${cy - 18} ${cx} ${cy} Z`}
-        fill={color}
-        stroke="#fff"
-        strokeWidth={2.5}
-      />
-      <circle cx={cx} cy={cy - 24} r={6} fill="#fff" />
+    <g className="mk" pointerEvents="none">
+      <circle className="mk-pulse" cx={cx} cy={cy} r={16} fill="none" stroke={color} strokeWidth={2.5} />
+      <circle cx={cx} cy={cy} r={15} fill="#fff" stroke={color} strokeWidth={3} />
+      <circle cx={cx} cy={cy} r={6} fill={color} />
+      <g className="mk-label">
+        <rect x={cx - w / 2} y={ly} width={w} height={26} rx={13} fill="rgba(255,255,255,.95)" stroke="rgba(0,0,0,.08)" />
+        <text x={cx} y={ly + 18} textAnchor="middle" fontSize={15} fontWeight={700} fill="#1d2b40">{name}</text>
+      </g>
     </g>
   );
 }
@@ -77,8 +79,8 @@ export default function CampusMap({
             role="button"
             aria-label={tx(l.i18n, lang, 'name')}
           >
-            <circle cx={l.mapX} cy={l.mapY} r={48} fill="transparent" style={{ cursor: 'pointer' }} />
-            {!(mode === 'event' && liveLocs.has(l.slug)) && <Pin cx={l.mapX} cy={l.mapY} evt={evt} />}
+            <circle cx={l.mapX} cy={l.mapY} r={44} fill="transparent" style={{ cursor: 'pointer' }} />
+            {!(mode === 'event' && liveLocs.has(l.slug)) && <Marker cx={l.mapX} cy={l.mapY} name={tx(l.i18n, lang, 'name')} evt={evt} />}
           </g>
         );
       })}
