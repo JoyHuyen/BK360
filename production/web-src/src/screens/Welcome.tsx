@@ -120,7 +120,7 @@ export default function Welcome({
 
         <div className="years">{years}</div>
 
-        <h1 className="brand">BK<span className="g">360</span></h1>
+        <h1 className="brand">{w.title?.trim() ? w.title : <>BK<span className="g">360</span></>}</h1>
         <div className="tag">{tagline}</div>
         <div className="sub">{subtitle}</div>
 

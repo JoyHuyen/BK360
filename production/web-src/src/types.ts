@@ -8,6 +8,7 @@ export interface Vr360Config {
   startSlug?: string | null;
 }
 export interface WelcomeConfig {
+  title?: string; // tiêu đề chính (mặc định "BK360")
   ribbon?: { vi?: string; en?: string };
   tagline?: { vi?: string; en?: string };
   subtitle?: { vi?: string; en?: string };

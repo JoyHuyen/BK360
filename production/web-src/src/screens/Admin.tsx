@@ -782,6 +782,7 @@ function MapPanel({ mapBg, reload }: any) {
 /* ===================== TRANG CHÀO (WELCOME) ===================== */
 function WelcomePanel({ welcome, reload }: any) {
   const init = () => ({
+    title: welcome?.title || '',
     ribbonVi: welcome?.ribbon?.vi || '', ribbonEn: welcome?.ribbon?.en || '',
     tagVi: welcome?.tagline?.vi || '', tagEn: welcome?.tagline?.en || '',
     subVi: welcome?.subtitle?.vi || '', subEn: welcome?.subtitle?.en || '',
@@ -807,6 +808,7 @@ function WelcomePanel({ welcome, reload }: any) {
       ribbon: { vi: f.ribbonVi || undefined, en: f.ribbonEn || undefined },
       tagline: { vi: f.tagVi || undefined, en: f.tagEn || undefined },
       subtitle: { vi: f.subVi || undefined, en: f.subEn || undefined },
+      title: f.title || undefined,
       years: f.years || undefined, effects: !!f.effects, bg: f.bg || null,
     };
     setMsg('Đang lưu…');
@@ -824,6 +826,9 @@ function WelcomePanel({ welcome, reload }: any) {
       <div className="adm-card" style={{ maxWidth: 640 }}>
         <h4 style={{ margin: '0 0 6px' }}>Màn hình chào (Welcome)</h4>
         <p className="muted" style={{ marginTop: 0 }}>Tuỳ chỉnh chữ trên màn hình đầu tiên. Bỏ trống ô nào sẽ dùng <b>mặc định</b> (ghi sẵn trong ô gợi ý).</p>
+
+        <label>Tiêu đề chính</label>
+        <input value={f.title} onChange={(e) => set('title', e.target.value)} placeholder="BK360" />
 
         <div className="frow">
           <div><label>Ruy băng (VI)</label><input value={f.ribbonVi} onChange={(e) => set('ribbonVi', e.target.value)} placeholder="Chào mừng 70 năm" /></div>
