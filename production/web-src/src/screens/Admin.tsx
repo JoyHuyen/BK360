@@ -34,8 +34,8 @@ const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const MAP_W = 1250;
 const MAP_H = 1070;
 
-// Bộ icon line đồng bộ (stroke currentColor) cho sidebar.
-function NavIcon({ name }: { name: string }) {
+// Bộ icon line đồng bộ (stroke currentColor) cho toàn admin.
+function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
   const p: Record<string, any> = {
     dashboard: (<><rect x="3" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="3" width="7" height="7" rx="1.5" /><rect x="14" y="14" width="7" height="7" rx="1.5" /><rect x="3" y="14" width="7" height="7" rx="1.5" /></>),
     image: (<><rect x="3" y="3" width="18" height="18" rx="2" /><circle cx="8.5" cy="8.5" r="1.5" /><path d="M21 15l-5-5L5 21" /></>),
@@ -46,9 +46,17 @@ function NavIcon({ name }: { name: string }) {
     users: (<><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="9" cy="7" r="4" /><path d="M23 21v-2a4 4 0 0 0-3-3.87" /><path d="M16 3.13a4 4 0 0 1 0 7.75" /></>),
     eye: (<><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7z" /><circle cx="12" cy="12" r="3" /></>),
     logout: (<><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4" /><path d="M16 17l5-5-5-5" /><path d="M21 12H9" /></>),
+    edit: (<><path d="M12 20h9" /><path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4z" /></>),
+    trash: (<><path d="M3 6h18" /><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6" /><path d="M10 11v6M14 11v6" /><path d="M9 6V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" /></>),
+    plus: (<path d="M12 5v14M5 12h14" />),
+    'chevron-up': (<path d="M18 15l-6-6-6 6" />),
+    'chevron-down': (<path d="M6 9l6 6 6-6" />),
+    check: (<path d="M20 6L9 17l-5-5" />),
+    arrow: (<><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></>),
+    link: (<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>),
   };
   return (
-    <svg className="nav-ic" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
+    <svg className="nav-ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
   );
 }
 
@@ -431,7 +439,7 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
       <div className="editor-ft">
         {msg && <span className="msg">{msg}</span>}
         <div className="spacer" />
-        {loc && <button className="adel" onClick={del}>🗑 Xoá</button>}
+        {loc && <button className="adel" onClick={del}><NavIcon name="trash" size={16} /> Xoá</button>}
         <button className="aprim" onClick={save}>💾 Lưu</button>
       </div>
     </div>
@@ -505,8 +513,8 @@ function CampaignsPanel({ camps, locs, reload }: any) {
         <div className="arow" key={c.id}>
           <div className="arow-main"><b>{c.icon} {c.i18n?.vi?.name}</b><span>{c.schedule?.length || 0} hoạt động · {c.enabled ? 'ĐANG BẬT' : 'tắt'}</span></div>
           <label className="aswitch"><input type="checkbox" checked={c.enabled} onChange={async (e) => { await api.toggleCampaign(c.id, e.target.checked); reload(); }} /><span /></label>
-          <button className="aic" onClick={() => setEdit(c)}>✏️</button>
-          <button className="aic" onClick={async () => { if (confirm('Xoá sự kiện?')) { await api.deleteCampaign(c.id); reload(); } }}>🗑</button>
+          <button className="aic" onClick={() => setEdit(c)} title="Sửa"><NavIcon name="edit" size={17} /></button>
+          <button className="aic" title="Xoá" onClick={async () => { if (confirm('Xoá sự kiện?')) { await api.deleteCampaign(c.id); reload(); } }}><NavIcon name="trash" size={17} /></button>
         </div>
       ))}
       {edit && <CampaignEditor camp={edit === 'new' ? null : edit} onClose={() => setEdit(null)} onSaved={() => { setEdit(null); reload(); }} />}
@@ -817,30 +825,35 @@ function VR360Panel({ locs, vr360, reload }: any) {
       <div className="adm-card">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <h4 style={{ margin: 0, flex: 1 }}>Điểm 360 (Scene) — {scenes.length}</h4>
-          <button className="aprim" onClick={() => setEdit('new')}>+ Thêm điểm 360</button>
+          <button className="aprim" onClick={() => setEdit('new')}><NavIcon name="plus" size={17} /> Thêm điểm 360</button>
         </div>
-        <p className="muted">Mỗi điểm là một ảnh 360°. Thêm nhiều điểm (kể cả lối đi, góc sân) để tour mượt; đặt <b>mũi tên</b> trong ảnh để đi sang điểm khác. ▲▼ sắp thứ tự.</p>
+        <p className="muted">Mỗi điểm là một ảnh 360°. Thêm nhiều điểm (kể cả lối đi, góc sân) để tour mượt; đặt <b>mũi tên</b> trong ảnh để đi sang điểm khác. Dùng nút lên/xuống để sắp thứ tự.</p>
         {scenes.length === 0 && <p className="muted">Chưa có điểm 360 — VR360 đang <b>tạm dùng</b> các địa điểm có ảnh 360. Thêm điểm 360 để bật chế độ tour Street View.</p>}
         <div className="vr-list">
           {scenes.map((s, i) => (
             <div className={'vr-row' + (!s.enabled ? ' off' : '')} key={s.id}>
               <div className="vr-ord">
-                <button className="aic" disabled={i === 0} onClick={() => move(i, -1)} title="Lên">▲</button>
-                <button className="aic" disabled={i === scenes.length - 1} onClick={() => move(i, 1)} title="Xuống">▼</button>
+                <button className="aic" disabled={i === 0} onClick={() => move(i, -1)} title="Lên"><NavIcon name="chevron-up" size={15} /></button>
+                <button className="aic" disabled={i === scenes.length - 1} onClick={() => move(i, 1)} title="Xuống"><NavIcon name="chevron-down" size={15} /></button>
+              </div>
+              <div className="vr-thumb" style={s.pano ? { backgroundImage: `url(${s.pano})` } : undefined}>
+                {!s.pano && <NavIcon name="image" size={18} />}
               </div>
               <div className="vr-main">
                 <b>{s.title?.vi || s.slug}</b>
                 <span>
-                  {s.pano ? <span className="ok-tag">✓ ảnh 360</span> : <span className="miss-tag">chưa có ảnh</span>}
-                  {(s.hotspots?.length ?? 0) > 0 && <span className="ok-tag">➤ {s.hotspots.length} mũi tên</span>}
-                  {s.locationId && <span className="ok-tag">🔗 địa điểm</span>}
+                  {s.pano
+                    ? <span className="ok-tag"><NavIcon name="check" size={12} /> ảnh 360</span>
+                    : <span className="miss-tag">chưa có ảnh</span>}
+                  {(s.hotspots?.length ?? 0) > 0 && <span className="ok-tag"><NavIcon name="arrow" size={12} /> {s.hotspots.length} mũi tên</span>}
+                  {s.locationId && <span className="ok-tag"><NavIcon name="link" size={12} /> địa điểm</span>}
                 </span>
               </div>
               <label className="chk-row" title="Bật/tắt hiển thị trong tour">
                 <input type="checkbox" checked={s.enabled} onChange={() => toggle(s)} /><span>Bật</span>
               </label>
-              <button className="aic" onClick={() => setEdit(s)}>✏️</button>
-              <button className="aic" onClick={() => del(s)}>🗑</button>
+              <button className="aic" onClick={() => setEdit(s)} title="Sửa"><NavIcon name="edit" size={17} /></button>
+              <button className="aic" onClick={() => del(s)} title="Xoá"><NavIcon name="trash" size={17} /></button>
             </div>
           ))}
         </div>
@@ -937,7 +950,7 @@ function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
                     <option value="">(chọn điểm đích)</option>
                     {others.map((s) => <option key={s.id} value={s.slug}>{s.title?.vi || s.slug}</option>)}
                   </select>
-                  <button className="aic" onClick={() => delHs(i)}>🗑</button>
+                  <button className="aic" onClick={() => delHs(i)} title="Xoá"><NavIcon name="trash" size={16} /></button>
                 </div>
               ))}
             </div>
@@ -990,8 +1003,8 @@ function UsersPanel({ meId }: { meId?: string }) {
               <b>{u.name || u.email} {u.id === meId && <span className="miss-tag">bạn</span>}</b>
               <span>{u.email} · {ROLE_LABEL[u.role] || u.role}</span>
             </div>
-            <button className="aic" onClick={() => setEdit(u)}>✏️</button>
-            {u.id !== meId && <button className="aic" onClick={() => del(u)}>🗑</button>}
+            <button className="aic" onClick={() => setEdit(u)} title="Sửa"><NavIcon name="edit" size={17} /></button>
+            {u.id !== meId && <button className="aic" onClick={() => del(u)} title="Xoá"><NavIcon name="trash" size={17} /></button>}
           </div>
         ))}
       </div>
