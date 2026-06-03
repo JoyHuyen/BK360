@@ -14,6 +14,10 @@ class UpdateProjectDto {
   /** Cấu hình VR360: {autorotate, speed, startSlug} */
   @IsOptional() @IsObject()
   vr360?: Record<string, any>;
+
+  /** Cấu hình màn hình chào */
+  @IsOptional() @IsObject()
+  welcome?: Record<string, any>;
 }
 
 @Controller('projects')

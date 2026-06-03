@@ -71,6 +71,7 @@ export default function App() {
           setLang={setLang}
           enabledCampaigns={campaigns.length}
           isAdmin={!!user}
+          welcome={project?.welcome}
           onGo={setScreen}
         />
       )}

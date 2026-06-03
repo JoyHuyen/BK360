@@ -54,6 +54,7 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
     check: (<path d="M20 6L9 17l-5-5" />),
     arrow: (<><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></>),
     link: (<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>),
+    home: (<><path d="M3 9.5L12 3l9 6.5" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></>),
   };
   return (
     <svg className="nav-ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
@@ -62,7 +63,10 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
 
 // Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
-  { items: [{ id: 'overview', icon: 'dashboard', label: 'Dashboard' }] },
+  { items: [
+    { id: 'overview', icon: 'dashboard', label: 'Dashboard' },
+    { id: 'welcome', icon: 'home', label: 'Trang chào' },
+  ] },
   {
     title: 'Bản đồ 2D',
     items: [
@@ -180,6 +184,7 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
       <main className="adm-main">
         <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
         {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
+        {nav === 'welcome' && <WelcomePanel welcome={project?.welcome} reload={reload} />}
         {nav === 'locations' && <LocationsPanel locs={locs} mapBg={project?.mapBg} reload={reload} />}
         {nav === 'map' && <MapPanel mapBg={project?.mapBg} reload={reload} />}
         {nav === 'vr360' && <VR360Panel locs={locs} vr360={project?.vr360} reload={reload} />}
@@ -769,6 +774,73 @@ function MapPanel({ mapBg, reload }: any) {
             </svg>
           </div>
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== TRANG CHÀO (WELCOME) ===================== */
+function WelcomePanel({ welcome, reload }: any) {
+  const init = () => ({
+    ribbonVi: welcome?.ribbon?.vi || '', ribbonEn: welcome?.ribbon?.en || '',
+    tagVi: welcome?.tagline?.vi || '', tagEn: welcome?.tagline?.en || '',
+    subVi: welcome?.subtitle?.vi || '', subEn: welcome?.subtitle?.en || '',
+    years: welcome?.years || '', effects: welcome?.effects !== false,
+  });
+  const [f, setF] = useState<any>(init);
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setF(init()); }, [welcome]);
+  const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
+
+  const save = async () => {
+    const payload = {
+      ribbon: { vi: f.ribbonVi || undefined, en: f.ribbonEn || undefined },
+      tagline: { vi: f.tagVi || undefined, en: f.tagEn || undefined },
+      subtitle: { vi: f.subVi || undefined, en: f.subEn || undefined },
+      years: f.years || undefined, effects: !!f.effects,
+    };
+    setMsg('Đang lưu…');
+    try { await api.updateProject({ welcome: payload }); setMsg('Đã lưu ✓'); reload(); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const reset = async () => {
+    if (!confirm('Khôi phục mặc định cho màn hình chào?')) return;
+    try { await api.updateProject({ welcome: null }); setMsg('Đã khôi phục mặc định ✓'); reload(); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+
+  return (
+    <div className="adm-body">
+      <div className="adm-card" style={{ maxWidth: 640 }}>
+        <h4 style={{ margin: '0 0 6px' }}>Màn hình chào (Welcome)</h4>
+        <p className="muted" style={{ marginTop: 0 }}>Tuỳ chỉnh chữ trên màn hình đầu tiên. Bỏ trống ô nào sẽ dùng <b>mặc định</b> (ghi sẵn trong ô gợi ý).</p>
+
+        <div className="frow">
+          <div><label>Ruy băng (VI)</label><input value={f.ribbonVi} onChange={(e) => set('ribbonVi', e.target.value)} placeholder="Chào mừng 70 năm" /></div>
+          <div><label>Ruy băng (EN)</label><input value={f.ribbonEn} onChange={(e) => set('ribbonEn', e.target.value)} placeholder="Welcome · 70 Years" /></div>
+        </div>
+        <div className="frow">
+          <div style={{ maxWidth: 200 }}><label>Dòng năm</label><input value={f.years} onChange={(e) => set('years', e.target.value)} placeholder="1956 — 2026" /></div>
+        </div>
+        <div className="frow">
+          <div><label>Tiêu đề phụ (VI)</label><input value={f.tagVi} onChange={(e) => set('tagVi', e.target.value)} placeholder="Hành trình 70 năm" /></div>
+          <div><label>Tiêu đề phụ (EN)</label><input value={f.tagEn} onChange={(e) => set('tagEn', e.target.value)} placeholder="70-Year Journey" /></div>
+        </div>
+        <label>Mô tả (VI)</label>
+        <textarea rows={2} value={f.subVi} onChange={(e) => set('subVi', e.target.value)} placeholder="Khám phá Đại học Bách khoa Hà Nội — chọn cách bạn muốn tham quan." />
+        <label>Mô tả (EN)</label>
+        <textarea rows={2} value={f.subEn} onChange={(e) => set('subEn', e.target.value)} placeholder="Explore Hanoi University of Science and Technology — choose how to visit." />
+
+        <label className="chk-row" style={{ marginTop: 14 }} title="Dây cờ + confetti trên màn chào">
+          <input type="checkbox" checked={f.effects} onChange={(e) => set('effects', e.target.checked)} />
+          <span>Hiệu ứng lễ hội (dây cờ + confetti)</span>
+        </label>
+
+        <div className="btn-row">
+          <button className="aprim" onClick={save}>💾 Lưu</button>
+          <button className="asec" onClick={reset}>↺ Khôi phục mặc định</button>
+        </div>
+        {msg && <div className="msg" style={{ marginTop: 10 }}>{msg}</div>}
       </div>
     </div>
   );

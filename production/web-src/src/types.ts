@@ -7,6 +7,13 @@ export interface Vr360Config {
   speed?: number; // độ/giây
   startSlug?: string | null;
 }
+export interface WelcomeConfig {
+  ribbon?: { vi?: string; en?: string };
+  tagline?: { vi?: string; en?: string };
+  subtitle?: { vi?: string; en?: string };
+  years?: string;
+  effects?: boolean; // bật hiệu ứng lễ hội (dây cờ + confetti), mặc định bật
+}
 export interface Project {
   id?: string;
   slug: string;
@@ -14,6 +21,7 @@ export interface Project {
   mapBg?: string | null;
   theme?: any;
   vr360?: Vr360Config | null;
+  welcome?: WelcomeConfig | null;
 }
 export interface LocSettings {
   vrExclude?: boolean; // ẩn riêng khỏi VR360

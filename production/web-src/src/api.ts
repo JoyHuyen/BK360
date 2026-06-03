@@ -34,7 +34,7 @@ export const api = {
   campaigns: () => req<Campaign[]>('/campaigns'),
   scenes: () => req<import('./types').Scene[]>('/scenes'),
   project: () => req<import('./types').Project | null>('/projects/current'),
-  updateProject: (d: { mapBg?: string | null; name?: string; vr360?: import('./types').Vr360Config }) =>
+  updateProject: (d: { mapBg?: string | null; name?: string; vr360?: import('./types').Vr360Config; welcome?: import('./types').WelcomeConfig | null }) =>
     req('/projects/current', { method: 'PATCH', body: JSON.stringify(d) }),
 
   // auth

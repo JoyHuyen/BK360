@@ -38,6 +38,7 @@ model Project {
   name      String
   enabled   Boolean    @default(true)
   theme     Json?      // màu sắc/nhận diện riêng (tuỳ chọn)
+  welcome   Json?      // cấu hình màn hình chào: {ribbon{vi,en}, tagline{vi,en}, subtitle{vi,en}, years, effects}
   vr360     Json?      // cấu hình tour VR360: {autorotate, speed, startSlug}
   mapBg     String?    // link ảnh nền 2D map của project
   order     Int        @default(0)

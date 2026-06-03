@@ -1,4 +1,4 @@
-import type { Lang, Screen } from '../types';
+import type { Lang, Screen, WelcomeConfig } from '../types';
 import { t } from '../i18n';
 
 // Hình học dây cờ võng (parabol): top0 = mép treo 2 đầu, dip = độ võng giữa.
@@ -39,14 +39,22 @@ export default function Welcome({
   setLang,
   enabledCampaigns,
   isAdmin,
+  welcome,
   onGo,
 }: {
   lang: Lang;
   setLang: (l: Lang) => void;
   enabledCampaigns: number;
   isAdmin: boolean;
+  welcome?: WelcomeConfig | null;
   onGo: (s: Screen) => void;
 }) {
+  const w = welcome || {};
+  const ribbonCustom = w.ribbon?.[lang];
+  const years = w.years || '1956 — 2026';
+  const tagline = w.tagline?.[lang] || t('appTag', lang);
+  const subtitle = w.subtitle?.[lang] || t('subtitle', lang);
+  const effects = w.effects !== false; // mặc định bật
   const tiles: { id: Screen; icon: string; bg: string; fg?: string; title: string; desc: string }[] = [
     { id: 'map2d', icon: '🗺️', bg: '#9e1b32', title: t('map2d', lang), desc: t('map2dDesc', lang) },
     { id: 'vr360', icon: '🌐', bg: '#0e8a8a', title: t('vr360', lang), desc: t('vr360Desc', lang) },
@@ -57,7 +65,8 @@ export default function Welcome({
 
   return (
     <div className="screen show welcome">
-      {/* Trang trí lễ hội — dây cờ võng xuống + rung rinh */}
+      {/* Trang trí lễ hội — bật/tắt theo cấu hình */}
+      {effects && <>
       <div className="bunting" aria-hidden="true">
         <svg className="bstring" viewBox="0 0 100 124" preserveAspectRatio="none">
           <path d={`M0 ${BT.top0} Q50 ${BT.top0 + 2 * BT.dip} 100 ${BT.top0}`} fill="none" stroke="#bd7c42" strokeWidth={2} vectorEffect="non-scaling-stroke" />
@@ -91,6 +100,7 @@ export default function Welcome({
           />
         ))}
       </div>
+      </>}
 
       <button className="lang-btn" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
         {lang === 'vi' ? 'EN' : 'VI'}
@@ -101,14 +111,14 @@ export default function Welcome({
 
       <div className="wrap">
         <div className="ribbon">
-          🎉 {lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>} 🎉
+          🎉 {ribbonCustom ? <>{ribbonCustom}</> : (lang === 'vi' ? <>Chào mừng <b>70 năm</b></> : <>Welcome · <b>70 Years</b></>)} 🎉
         </div>
 
-        <div className="years">1956 — 2026</div>
+        <div className="years">{years}</div>
 
         <h1 className="brand">BK<span className="g">360</span></h1>
-        <div className="tag">{t('appTag', lang)}</div>
-        <div className="sub">{t('subtitle', lang)}</div>
+        <div className="tag">{tagline}</div>
+        <div className="sub">{subtitle}</div>
 
         <div className="opts">
           {tiles.map((tl) => (
