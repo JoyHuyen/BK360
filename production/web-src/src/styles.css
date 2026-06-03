@@ -20,20 +20,23 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 
 /* Welcome */
 .welcome{background:radial-gradient(125% 88% at 50% -10%, #fff8ee 0%, #ffeedd 42%, #ffe2c6 78%, #ffd9b8 100%);overflow-y:auto}
-.welcome .wrap{position:relative;z-index:1;padding:calc(90px + var(--safe-t)) 22px calc(24px + var(--safe-b));display:flex;flex-direction:column;align-items:center;text-align:center;min-height:100%}
+.welcome .wrap{position:relative;z-index:1;padding:calc(122px + var(--safe-t)) 22px calc(24px + var(--safe-b));display:flex;flex-direction:column;align-items:center;text-align:center;min-height:100%}
 
-/* Dây cờ tam giác (bunting) — võng xuống + rung rinh */
-.bunting{position:absolute;top:calc(6px + var(--safe-t));left:0;right:0;height:96px;z-index:0;pointer-events:none}
+/* Dây cờ tam giác (bunting) — võng sâu, lá to, cả dây đong đưa + lá rung rinh + tua rua */
+.bunting{position:absolute;top:calc(6px + var(--safe-t));left:0;right:0;height:124px;z-index:0;pointer-events:none;transform-origin:50% 0;animation:bsway 6s ease-in-out infinite}
 .bstring{position:absolute;inset:0;width:100%;height:100%}
 .bflag{position:absolute;transform-origin:top center}
-.bflag i{display:block;width:0;height:0;border-left:15px solid transparent;border-right:15px solid transparent;border-top:26px solid #f5b301;filter:drop-shadow(0 3px 2px rgba(0,0,0,.13));transform-origin:top center;animation:flutter 2.8s ease-in-out infinite}
+.bflag i{display:block;width:0;height:0;border-left:18px solid transparent;border-right:18px solid transparent;border-top:33px solid #f5b301;filter:drop-shadow(0 3px 2px rgba(0,0,0,.14));transform-origin:top center;animation:flutter 2.8s ease-in-out infinite}
 .bflag i.c0{border-top-color:#f5b301}
 .bflag i.c1{border-top-color:#e2342f}
 .bflag i.c2{border-top-color:#14a5a5}
 .bflag i.c3{border-top-color:#ff7aa2}
 .bflag i.c4{border-top-color:#3f8fd0}
 .bflag i.c5{border-top-color:#43b56b}
-@keyframes flutter{0%,100%{transform:rotate(-4deg)}50%{transform:rotate(4deg)}}
+.streamer{position:absolute;transform:translateX(-50%);transform-origin:top center;overflow:visible;animation:dangle ease-in-out infinite}
+@keyframes flutter{0%,100%{transform:rotate(-5deg)}50%{transform:rotate(5deg)}}
+@keyframes bsway{0%,100%{transform:rotate(-1.6deg)}50%{transform:rotate(1.6deg)}}
+@keyframes dangle{0%,100%{transform:translateX(-50%) rotate(-9deg)}50%{transform:translateX(-50%) rotate(9deg)}}
 
 /* Trang trí lễ hội — tông sáng, nhiều màu */
 .fest-glow{position:absolute;top:-12%;left:50%;transform:translateX(-50%);width:560px;height:560px;max-width:135vw;background:radial-gradient(circle, rgba(255,205,90,.45), rgba(255,205,90,0) 64%);pointer-events:none;z-index:0}
@@ -75,7 +78,7 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .opt .t span{display:block;color:#7a6a62;font-size:12.5px;margin-top:3px;line-height:1.35}
 .opt .arw{margin-left:auto;color:var(--bk-red);opacity:.7;font-size:24px}
 .welcome-foot{margin-top:24px;color:rgba(120,70,45,.6);font-size:11.5px;letter-spacing:.4px;font-weight:600}
-@media (prefers-reduced-motion:reduce){.fest-rays{animation:none}.confetti{display:none}.bflag i{animation:none}}
+@media (prefers-reduced-motion:reduce){.fest-rays{animation:none}.confetti{display:none}.bflag i,.bunting,.streamer{animation:none}}
 .lang-btn,.admin-btn{position:absolute;top:calc(16px + var(--safe-t));width:42px;height:42px;border-radius:12px;border:1px solid rgba(158,27,50,.18);background:rgba(255,255,255,.8);color:var(--bk-red);font-size:15px;font-weight:800;cursor:pointer;z-index:3;box-shadow:0 4px 12px rgba(150,60,40,.14)}
 .admin-btn{right:18px;font-size:18px}
 .lang-btn{right:68px}
