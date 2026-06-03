@@ -388,7 +388,7 @@ function LocationEditor({ loc, mapBg, onSaved, onClose, onDeleted }: any) {
         {msg && <span className="msg">{msg}</span>}
         <div className="spacer" />
         {loc && <button className="adel" onClick={del}>🗑 Xoá</button>}
-        <button className="aprim" onClick={save}>Lưu</button>
+        <button className="aprim" onClick={save}>💾 Lưu</button>
       </div>
     </div>
   );
@@ -497,7 +497,7 @@ function CampaignEditor({ camp, onClose, onSaved }: any) {
         </label>
         <textarea rows={7} value={sched} onChange={(e) => setSched(e.target.value)} placeholder="08:00 | stadium | 1 | Lễ khai mạc 70 năm" />
         {err && <div className="err">{err}</div>}
-        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+        <div className="am-acts"><button className="aprim" onClick={save}>💾 Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
       </div>
     </div>
   );
@@ -880,7 +880,7 @@ function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
           </label>
         </div>
         {msg && <div className="err">{msg}</div>}
-        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+        <div className="am-acts"><button className="aprim" onClick={save}>💾 Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
       </div>
     </div>
   );
@@ -968,7 +968,7 @@ function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: ()
         <label>{user ? 'Đặt lại mật khẩu (bỏ trống nếu giữ nguyên)' : 'Mật khẩu (≥ 6 ký tự)'}</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
         {err && <div className="err">{err}</div>}
-        <div className="am-acts"><button className="aprim" onClick={save}>Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+        <div className="am-acts"><button className="aprim" onClick={save}>💾 Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
       </div>
     </div>
   );
