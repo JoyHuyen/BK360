@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable, NotFoundException, Logger } from '@nestjs/common';
 import { join } from 'path';
-import { writeFile } from 'fs/promises';
+import { writeFile, unlink } from 'fs/promises';
 import { randomUUID } from 'crypto';
 import sharp from 'sharp';
 import { PrismaService } from '../prisma/prisma.service';
@@ -49,6 +49,7 @@ export class MediaService {
       data: { kind: dto.kind, locationId: dto.locationId || undefined, lang: dto.lang || undefined, url, meta },
     });
     await this.audit.log(userId, 'CREATE', 'Media', media.id, { kind: dto.kind, url });
+    await this.cleanupOld(dto.kind, dto.locationId, media.id);
     return media;
   }
 
@@ -87,12 +88,46 @@ export class MediaService {
       data: { kind: dto.kind, locationId: dto.locationId || undefined, lang: dto.lang || undefined, url, meta },
     });
     await this.audit.log(userId, 'CREATE', 'Media', media.id, { kind: dto.kind, url, source: src });
+    await this.cleanupOld(dto.kind, dto.locationId, media.id);
     return media;
+  }
+
+  // Chỉ giữ media của LẦN CUỐI cho cùng (địa điểm + loại) hoặc ảnh nền 2D (MAPBG):
+  // xoá file gốc + bản WebP + bản ghi cũ để tránh rác trên server.
+  // Bỏ qua PANO360 không gắn địa điểm (ảnh của Scene) để không xoá nhầm cảnh khác.
+  private async cleanupOld(kind: any, locationId: string | undefined, keepId: string) {
+    let where: any;
+    if (locationId) where = { locationId, kind, id: { not: keepId } };
+    else if (kind === 'MAPBG') where = { kind: 'MAPBG', locationId: null, id: { not: keepId } };
+    else return;
+
+    const dir = process.env.MEDIA_DIR ?? '/data/media';
+    const old = await this.prisma.media.findMany({ where });
+    if (!old.length) return;
+    for (const m of old) {
+      const meta: any = m.meta || {};
+      for (const u of [m.url, meta.optimized]) {
+        if (typeof u === 'string') {
+          const fn = u.split('/').pop();
+          if (fn) await unlink(join(dir, fn)).catch(() => {});
+        }
+      }
+    }
+    await this.prisma.media.deleteMany({ where });
+    this.logger.log(`Dọn ${old.length} media cũ (${kind}${locationId ? ' @' + locationId : ''}).`);
   }
 
   async remove(id: string, userId: string) {
     const media = await this.prisma.media.findUnique({ where: { id } });
     if (!media) throw new NotFoundException('Không tìm thấy media');
+    const dir = process.env.MEDIA_DIR ?? '/data/media';
+    const meta: any = media.meta || {};
+    for (const u of [media.url, meta.optimized]) {
+      if (typeof u === 'string') {
+        const fn = u.split('/').pop();
+        if (fn) await unlink(join(dir, fn)).catch(() => {});
+      }
+    }
     await this.prisma.media.delete({ where: { id } });
     await this.audit.log(userId, 'DELETE', 'Media', id);
     return { ok: true };
