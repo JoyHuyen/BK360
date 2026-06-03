@@ -38,6 +38,7 @@ model Project {
   name      String
   enabled   Boolean    @default(true)
   theme     Json?      // màu sắc/nhận diện riêng (tuỳ chọn)
+  vr360     Json?      // cấu hình tour VR360: {autorotate, speed, startSlug}
   mapBg     String?    // link ảnh nền 2D map của project
   order     Int        @default(0)
   createdAt DateTime   @default(now())
@@ -64,6 +65,7 @@ model Location {
   mapY      Int          @default(430)
   shape     Json?        // {type:'rect'|'arch'|'stadium', w,h,rx,ry,...}
   palette   Json?        // {sky,ground,bld}
+  settings  Json?        // cấu hình riêng: {vrExclude:bool, vrYaw:number} cho VR360
   links     Json?        // {old,now,pano360,audio} — link ảnh/audio (Drive/OneDrive đã chuẩn hoá)
   i18n      Json         // {vi:{name,short,year,description,voiceText}, en:{...}}
   history   Json         @default("[]") // [{year,content}]

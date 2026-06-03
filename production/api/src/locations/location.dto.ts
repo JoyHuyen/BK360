@@ -31,6 +31,10 @@ export class CreateLocationDto {
   @IsOptional() @IsObject()
   palette?: Record<string, any>;
 
+  /** { vrExclude, vrYaw } — cấu hình riêng cho VR360 */
+  @IsOptional() @IsObject()
+  settings?: Record<string, any>;
+
   /** { old, now, pano360, audio } — link ảnh/audio */
   @IsOptional() @IsObject()
   links?: Record<string, any>;

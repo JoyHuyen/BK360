@@ -36,12 +36,12 @@ export class ProjectsService {
     const s = (slug && slug.trim()) || this.defaultSlug();
     const p = await this.prisma.project.findUnique({ where: { slug: s } });
     if (!p) return null;
-    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme };
+    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme, vr360: p.vr360 };
   }
 
-  async update(data: { mapBg?: string | null; name?: string; theme?: any }, slug?: string) {
+  async update(data: { mapBg?: string | null; name?: string; theme?: any; vr360?: any }, slug?: string) {
     const s = (slug && slug.trim()) || this.defaultSlug();
     const p = await this.prisma.project.update({ where: { slug: s }, data });
-    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme };
+    return { id: p.id, slug: p.slug, name: p.name, mapBg: p.mapBg, theme: p.theme, vr360: p.vr360 };
   }
 }

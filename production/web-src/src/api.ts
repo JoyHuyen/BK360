@@ -33,7 +33,7 @@ export const api = {
   locations: () => req<Location[]>('/locations'),
   campaigns: () => req<Campaign[]>('/campaigns'),
   project: () => req<import('./types').Project | null>('/projects/current'),
-  updateProject: (d: { mapBg?: string | null; name?: string }) =>
+  updateProject: (d: { mapBg?: string | null; name?: string; vr360?: import('./types').Vr360Config }) =>
     req('/projects/current', { method: 'PATCH', body: JSON.stringify(d) }),
 
   // auth

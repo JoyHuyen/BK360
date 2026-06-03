@@ -2,12 +2,22 @@ export type Lang = 'vi' | 'en';
 
 export type MediaKind = 'PANO360' | 'OLD' | 'NOW' | 'AUDIO' | 'MODEL3D' | 'MAPBG';
 
+export interface Vr360Config {
+  autorotate?: boolean;
+  speed?: number; // độ/giây
+  startSlug?: string | null;
+}
 export interface Project {
   id?: string;
   slug: string;
   name: string;
   mapBg?: string | null;
   theme?: any;
+  vr360?: Vr360Config | null;
+}
+export interface LocSettings {
+  vrExclude?: boolean; // ẩn riêng khỏi VR360
+  vrYaw?: number; // góc nhìn ban đầu (độ)
 }
 export interface Media {
   id: string;
@@ -53,6 +63,7 @@ export interface Location {
   order: number;
   media?: Media[];
   links?: { old?: string; now?: string; pano360?: string; audio?: string } | null;
+  settings?: { vrExclude?: boolean; vrYaw?: number } | null;
 }
 
 export interface ScheduleItem {

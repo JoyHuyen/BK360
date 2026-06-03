@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
 import { api, setToken } from '../api';
-import type { Lang, Location, Campaign, User } from '../types';
+import type { Lang, Location, Campaign, User, Project, Vr360Config } from '../types';
 
 /* ---------- helpers: chuẩn hoá link Drive/OneDrive ---------- */
 function driveId(u: string) {
@@ -37,6 +37,7 @@ const NAVS = [
   { id: 'overview', icon: '🏠', label: 'Tổng quan' },
   { id: 'locations', icon: '📍', label: 'Địa điểm' },
   { id: 'map', icon: '🗺️', label: 'Bản đồ nền' },
+  { id: 'vr360', icon: '🌐', label: 'VR360' },
   { id: 'campaigns', icon: '⭐', label: 'Sự kiện' },
   { id: 'import', icon: '📥', label: 'Nhập liệu' },
 ];
@@ -97,11 +98,11 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
   const [nav, setNav] = useState('locations');
   const [locs, setLocs] = useState<Location[]>([]);
   const [camps, setCamps] = useState<Campaign[]>([]);
-  const [mapBg, setMapBg] = useState<string | null>(null);
+  const [project, setProject] = useState<Project | null>(null);
   const reload = async () => {
     setLocs(await api.adminLocations());
     setCamps(await api.adminCampaigns());
-    setMapBg((await api.project().catch(() => null))?.mapBg ?? null);
+    setProject(await api.project().catch(() => null));
     reloadPublic();
   };
   useEffect(() => { reload(); }, []);
@@ -125,8 +126,9 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
       <main className="adm-main">
         <div className="adm-top"><b>{label}</b><span>{user.email} · {user.role}</span></div>
         {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
-        {nav === 'locations' && <LocationsPanel locs={locs} mapBg={mapBg} reload={reload} />}
-        {nav === 'map' && <MapPanel mapBg={mapBg} reload={reload} />}
+        {nav === 'locations' && <LocationsPanel locs={locs} mapBg={project?.mapBg} reload={reload} />}
+        {nav === 'map' && <MapPanel mapBg={project?.mapBg} reload={reload} />}
+        {nav === 'vr360' && <VR360Panel locs={locs} vr360={project?.vr360} reload={reload} />}
         {nav === 'campaigns' && <CampaignsPanel camps={camps} locs={locs} reload={reload} />}
         {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
         {nav === 'users' && user.role === 'SUPERADMIN' && <UsersPanel meId={user.id || user.sub} />}
@@ -689,6 +691,98 @@ function MapPanel({ mapBg, reload }: any) {
           <svg viewBox="0 0 1250 1070" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block', background: '#bcd49a', borderRadius: 14 }}>
             <image href={bg || MAP_URL} x={0} y={0} width={1250} height={1070} preserveAspectRatio="none" />
           </svg>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== VR360 ===================== */
+function VR360Panel({ locs, vr360, reload }: any) {
+  const [list, setList] = useState<Location[]>([]);
+  const [cfg, setCfg] = useState<Vr360Config>({ autorotate: false, speed: 6, startSlug: null });
+  const [msg, setMsg] = useState('');
+  useEffect(() => { setList([...locs].sort((a: Location, b: Location) => (a.order || 0) - (b.order || 0))); }, [locs]);
+  useEffect(() => { setCfg({ autorotate: vr360?.autorotate ?? false, speed: vr360?.speed ?? 6, startSlug: vr360?.startSlug ?? null }); }, [vr360]);
+
+  const saveCfg = async (next: Vr360Config) => {
+    setCfg(next); setMsg('Đang lưu…');
+    try { await api.updateProject({ vr360: next }); setMsg('Đã lưu cấu hình ✓'); reload(); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const persistOrder = async (nl: Location[]) => {
+    const ups = nl.map((l, i) => (l.order !== i ? api.updateLocation(l.id, { order: i }) : null)).filter(Boolean);
+    if (ups.length) { try { await Promise.all(ups as any); reload(); } catch (e: any) { setMsg('Lỗi: ' + e.message); } }
+  };
+  const move = async (i: number, dir: number) => {
+    const j = i + dir; if (j < 0 || j >= list.length) return;
+    const nl = [...list]; [nl[i], nl[j]] = [nl[j], nl[i]]; setList(nl); await persistOrder(nl);
+  };
+  const patchSettings = async (l: Location, patch: any) => {
+    const s = { ...(l.settings || {}), ...patch };
+    try { await api.updateLocation(l.id, { settings: s }); reload(); } catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const inTour = list.filter((l) => !l.isHidden && !l.settings?.vrExclude);
+
+  return (
+    <div className="adm-body">
+      <div className="adm-card">
+        <h4 style={{ margin: '0 0 8px' }}>Cấu hình tour VR360</h4>
+        <label className="chk-row" title="Ảnh 360° tự quay chậm; tạm dừng khi người xem chạm/kéo, tự quay lại sau vài giây.">
+          <input type="checkbox" checked={!!cfg.autorotate} onChange={(e) => saveCfg({ ...cfg, autorotate: e.target.checked })} />
+          <span>Tự động xoay 360° <span className="hint-q" title="Ảnh tự quay chậm; tạm dừng khi người xem thao tác.">ⓘ</span></span>
+        </label>
+        {cfg.autorotate && (
+          <div style={{ maxWidth: 220, marginTop: 8 }}>
+            <label title="Tốc độ tự xoay, độ/giây (3–15 hợp lý)">Tốc độ xoay (độ/giây)</label>
+            <input type="number" min={1} max={30} value={cfg.speed ?? 6}
+              onChange={(e) => setCfg({ ...cfg, speed: Number(e.target.value) })}
+              onBlur={() => saveCfg(cfg)} />
+          </div>
+        )}
+        <div style={{ marginTop: 10 }}>
+          <label title="Điểm dừng hiển thị đầu tiên khi mở VR360">Điểm bắt đầu <span className="hint-q" title="Điểm dừng hiển thị đầu tiên khi mở VR360">ⓘ</span></label>
+          <select value={cfg.startSlug || ''} onChange={(e) => saveCfg({ ...cfg, startSlug: e.target.value || null })}>
+            <option value="">(Điểm đầu danh sách)</option>
+            {inTour.map((l) => <option key={l.id} value={l.slug}>{l.i18n?.vi?.name || l.slug}</option>)}
+          </select>
+        </div>
+        {msg && <div className="msg" style={{ marginTop: 8 }}>{msg}</div>}
+      </div>
+
+      <div className="adm-card">
+        <h4 style={{ margin: '0 0 4px' }}>Điểm dừng & thứ tự ({inTour.length} trong tour)</h4>
+        <p className="muted" style={{ marginTop: 0 }}>Dùng ▲▼ để sắp thứ tự. Tắt "Trong tour" để ẩn riêng khỏi VR360 (vẫn hiện trên bản đồ 2D). Góc nhìn = hướng nhìn ban đầu (độ).</p>
+        <div className="vr-list">
+          {list.map((l, i) => {
+            const has360 = !!(l.links && l.links.pano360);
+            const excluded = !!l.settings?.vrExclude;
+            return (
+              <div className={'vr-row' + (excluded || l.isHidden ? ' off' : '')} key={l.id}>
+                <div className="vr-ord">
+                  <button className="aic" disabled={i === 0} onClick={() => move(i, -1)} title="Lên">▲</button>
+                  <button className="aic" disabled={i === list.length - 1} onClick={() => move(i, 1)} title="Xuống">▼</button>
+                </div>
+                <div className="vr-main">
+                  <b>{l.i18n?.vi?.name || l.slug}</b>
+                  <span>
+                    {l.isHidden && <span className="miss-tag">đang ẩn</span>}
+                    {!has360 && <span className="miss-tag">chưa có 360°</span>}
+                    {has360 && <span className="ok-tag">✓ 360°</span>}
+                  </span>
+                </div>
+                <label className="vr-yaw" title="Hướng nhìn ban đầu khi vào ảnh 360° (độ, 0–360)">
+                  góc
+                  <input type="number" placeholder="0" defaultValue={l.settings?.vrYaw ?? ''}
+                    onBlur={(e) => patchSettings(l, { vrYaw: e.target.value === '' ? undefined : Number(e.target.value) })} />
+                </label>
+                <label className="chk-row" title="Bật = nằm trong tour VR360">
+                  <input type="checkbox" checked={!excluded} onChange={() => patchSettings(l, { vrExclude: !excluded })} />
+                  <span>Trong tour</span>
+                </label>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

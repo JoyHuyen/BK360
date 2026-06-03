@@ -75,7 +75,7 @@ export default function App() {
         <EventScreen campaigns={campaigns} locations={locations} lang={lang} mapBg={project?.mapBg} onBack={() => setScreen('welcome')} />
       )}
       <Suspense fallback={<Loader />}>
-        {screen === 'vr360' && <VR360 locations={locations} lang={lang} onBack={() => setScreen('welcome')} />}
+        {screen === 'vr360' && <VR360 locations={locations} lang={lang} vr360={project?.vr360} onBack={() => setScreen('welcome')} />}
         {screen === 'admin' && (
           <Admin lang={lang} user={user} setUser={setUser} onBack={() => setScreen('welcome')} reloadPublic={loadPublic} />
         )}

@@ -1,5 +1,5 @@
 import { Body, Controller, Get, Patch } from '@nestjs/common';
-import { IsOptional, IsString } from 'class-validator';
+import { IsObject, IsOptional, IsString } from 'class-validator';
 import { Public } from '../common/public.decorator';
 import { Roles } from '../common/roles.decorator';
 import { ProjectsService } from './projects.service';
@@ -10,6 +10,10 @@ class UpdateProjectDto {
 
   @IsOptional() @IsString()
   name?: string;
+
+  /** Cấu hình VR360: {autorotate, speed, startSlug} */
+  @IsOptional() @IsObject()
+  vr360?: Record<string, any>;
 }
 
 @Controller('projects')

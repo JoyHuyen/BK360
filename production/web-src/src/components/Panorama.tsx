@@ -4,15 +4,34 @@ import type { Lang, Location } from '../types';
 import { makePano, mediaUrl } from '../generate';
 import { tx } from '../i18n';
 
-export default function Panorama({ location, lang }: { location: Location; lang: Lang }) {
+export default function Panorama({
+  location,
+  lang,
+  autorotate,
+  speed,
+  initialYaw,
+}: {
+  location: Location;
+  lang: Lang;
+  autorotate?: boolean;
+  speed?: number;
+  initialYaw?: number;
+}) {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const lon = useRef(0);
   const lat = useRef(0);
   const gyro = useRef(false);
   const gyroBase = useRef<number | null>(null);
   const [gyroOn, setGyroOn] = useState(false);
+  const rot = useRef(!!autorotate);
+  const [rotOn, setRotOn] = useState(!!autorotate);
+  const pauseRot = useRef(false);
+  const pauseTimer = useRef<any>(null);
 
   useEffect(() => {
+    lon.current = initialYaw || 0; // góc nhìn ban đầu (độ)
+    lat.current = 0;
+    gyroBase.current = null;
     const canvas = canvasRef.current!;
     const renderer = new THREE.WebGLRenderer({ canvas, antialias: true });
     renderer.setPixelRatio(window.devicePixelRatio);
@@ -46,6 +65,8 @@ export default function Panorama({ location, lang }: { location: Location; lang:
     const onDown = (e: MouseEvent | TouchEvent) => {
       if (gyro.current) return;
       down = true;
+      pauseRot.current = true; // tạm dừng tự xoay khi người dùng thao tác
+      if (pauseTimer.current) clearTimeout(pauseTimer.current);
       const t = 'touches' in e ? e.touches[0] : e;
       dx = t.clientX;
       dy = t.clientY;
@@ -58,7 +79,11 @@ export default function Panorama({ location, lang }: { location: Location; lang:
       lon.current = (dx - t.clientX) * 0.16 + plon;
       lat.current = Math.max(-80, Math.min(80, (t.clientY - dy) * 0.16 + plat));
     };
-    const onUp = () => (down = false);
+    const onUp = () => {
+      down = false;
+      if (pauseTimer.current) clearTimeout(pauseTimer.current);
+      pauseTimer.current = setTimeout(() => (pauseRot.current = false), 2500); // xoay lại sau 2.5s nghỉ
+    };
     const onOrient = (e: DeviceOrientationEvent) => {
       if (!gyro.current || e.alpha == null) return;
       if (gyroBase.current === null) gyroBase.current = e.alpha;
@@ -78,6 +103,7 @@ export default function Panorama({ location, lang }: { location: Location; lang:
 
     const animate = () => {
       raf = requestAnimationFrame(animate);
+      if (rot.current && !down && !gyro.current && !pauseRot.current) lon.current += (speed || 6) / 60; // tự xoay (độ/khung ~60fps)
       const ph = THREE.MathUtils.degToRad(90 - lat.current),
         th = THREE.MathUtils.degToRad(lon.current);
       camera.lookAt(
@@ -91,6 +117,7 @@ export default function Panorama({ location, lang }: { location: Location; lang:
 
     return () => {
       cancelAnimationFrame(raf);
+      if (pauseTimer.current) clearTimeout(pauseTimer.current);
       window.removeEventListener('mousemove', onMove);
       window.removeEventListener('mouseup', onUp);
       window.removeEventListener('resize', resize);
@@ -100,7 +127,7 @@ export default function Panorama({ location, lang }: { location: Location; lang:
       material.dispose();
       renderer.dispose();
     };
-  }, [location, lang]);
+  }, [location, lang, initialYaw]);
 
   const toggleGyro = async () => {
     if (gyro.current) {
@@ -131,6 +158,9 @@ export default function Panorama({ location, lang }: { location: Location; lang:
     <>
       <canvas ref={canvasRef} className="pano-canvas" />
       <div className="pano-ctrl">
+        <button className={rotOn ? 'on' : ''} onClick={() => { const v = !rotOn; setRotOn(v); rot.current = v; if (v) pauseRot.current = false; }}>
+          🔄 {lang === 'vi' ? 'Tự xoay' : 'Auto'}
+        </button>
         <button className={gyroOn ? 'on' : ''} onClick={toggleGyro}>🧭 {lang === 'vi' ? 'Xoay máy' : 'Gyro'}</button>
         <button onClick={reset}>↺ {lang === 'vi' ? 'Giữa' : 'Center'}</button>
       </div>
