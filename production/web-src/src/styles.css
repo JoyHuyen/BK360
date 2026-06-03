@@ -275,6 +275,20 @@ svg.campus{width:100%;height:100%;display:block}
 .adm-card h4{font-size:14px}
 /* Pin trên bản đồ thật */
 .pinmap{width:100%;border-radius:14px;overflow:hidden;margin-bottom:10px;border:1px solid var(--line)}
+/* Trang Ảnh nền 2D */
+.map-panel{display:grid;grid-template-columns:minmax(300px,380px) 1fr;gap:16px;align-items:start}
+@media(max-width:880px){.map-panel{grid-template-columns:1fr}}
+.mapdrop{display:flex;flex-direction:column;align-items:center;gap:6px;padding:26px 18px;margin-bottom:0}
+.mapdrop svg{width:36px;height:36px;color:var(--bk-red)}
+.mapdrop b{font-size:14px;color:var(--ink)}
+.mapdrop span{font-size:12px;color:#7a8699;text-align:center}
+.or-row{display:flex;align-items:center;gap:10px;margin:14px 0;color:#9aa7b6;font-size:11.5px;font-weight:600}
+.or-row::before,.or-row::after{content:"";flex:1;height:1px;background:var(--line)}
+.map-status{display:flex;align-items:center;gap:10px;margin-bottom:12px}
+.status-badge{font-size:12px;font-weight:700;padding:5px 12px;border-radius:20px}
+.status-badge.def{background:#eef4fb;color:#3a6ea5}
+.status-badge.cus{background:#e6f6ec;color:#1b7a3d}
+.map-status .asec{margin-left:auto}
 /* Checklist "cần bổ sung" */
 .todo-list{display:flex;flex-direction:column;gap:7px;max-height:340px;overflow:auto}
 .todo-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#f8fafc;border:1px solid var(--line);border-radius:10px;padding:8px 11px;cursor:pointer}

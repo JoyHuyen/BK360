@@ -714,28 +714,40 @@ function MapPanel({ mapBg, reload }: any) {
 
   return (
     <div className="adm-body">
-      <div className="adm-card">
-        <h4 style={{ margin: '0 0 6px' }}>Ảnh nền bản đồ 2D</h4>
-        <p className="muted" style={{ marginTop: 0 }}>
-          Tải ảnh sơ đồ khuôn viên riêng để thay nền bản đồ. Pin địa điểm (tab <b>Vị trí</b>) sẽ đặt trên chính ảnh này và khớp với trang người xem.
-          Bỏ trống = dùng <b>bản đồ vẽ tay</b> mặc định. Khuyến nghị ảnh ngang, tỉ lệ ~5:4.
-        </p>
-        <div className="am-acts" style={{ justifyContent: 'flex-start' }}>
-          <button className="aprim" onClick={upload}>⬆️ Tải ảnh nền</button>
-          {!isDefault && <button className="adel" onClick={() => save(null)}>↺ Về bản đồ vẽ tay</button>}
+      <div className="map-panel">
+        <div className="adm-card">
+          <h4 style={{ margin: '0 0 6px' }}>Ảnh nền bản đồ 2D</h4>
+          <p className="muted" style={{ marginTop: 0 }}>
+            Tải ảnh sơ đồ khuôn viên riêng để thay nền. Pin địa điểm (tab <b>Vị trí</b>) đặt trên chính ảnh này và khớp trang người xem.
+            Bỏ trống = dùng <b>bản đồ vẽ tay</b> mặc định.
+          </p>
+          <div className="dropzone mapdrop" onClick={upload} role="button" title="Bấm để chọn ảnh">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" />
+            </svg>
+            <b>Tải ảnh nền lên</b>
+            <span>PNG/JPG ngang, tỉ lệ ~5:4 (≈1250×1070). Bấm để chọn.</span>
+          </div>
+          <div className="or-row"><span>hoặc</span></div>
+          <div className="frow">
+            <input placeholder="Dán link ảnh (Drive/OneDrive)…" value={link} onChange={(e) => setLink(e.target.value)} />
+            <button className="asec" type="button" onClick={fromLink}>Dùng link</button>
+          </div>
+          {msg && <div className="msg" style={{ marginTop: 10 }}>{msg}</div>}
         </div>
-        <div className="frow" style={{ marginTop: 10 }}>
-          <input placeholder="hoặc dán link ảnh (Drive/OneDrive)…" value={link} onChange={(e) => setLink(e.target.value)} />
-          <button className="asec" type="button" onClick={fromLink}>Dùng link</button>
-        </div>
-        {msg && <div className="msg" style={{ marginTop: 8 }}>{msg}</div>}
-      </div>
-      <div className="adm-card">
-        <p className="muted" style={{ marginTop: 0 }}>Xem trước {isDefault ? '(bản đồ vẽ tay mặc định)' : '(ảnh nền tuỳ chọn)'}:</p>
-        <div className="pinmap">
-          <svg viewBox="0 0 1250 1070" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block', background: '#bcd49a', borderRadius: 14 }}>
-            <image href={bg || MAP_URL} x={0} y={0} width={1250} height={1070} preserveAspectRatio="none" />
-          </svg>
+
+        <div className="adm-card">
+          <div className="map-status">
+            <span className={'status-badge ' + (isDefault ? 'def' : 'cus')}>
+              {isDefault ? '● Bản đồ vẽ tay (mặc định)' : '● Ảnh nền tuỳ chọn'}
+            </span>
+            {!isDefault && <button className="asec" onClick={() => save(null)}>↺ Về bản đồ vẽ tay</button>}
+          </div>
+          <div className="pinmap">
+            <svg viewBox="0 0 1250 1070" preserveAspectRatio="xMidYMid meet" style={{ width: '100%', height: 'auto', display: 'block', background: '#bcd49a', borderRadius: 12 }}>
+              <image href={bg || MAP_URL} x={0} y={0} width={1250} height={1070} preserveAspectRatio="none" />
+            </svg>
+          </div>
         </div>
       </div>
     </div>
