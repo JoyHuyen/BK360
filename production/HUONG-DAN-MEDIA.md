@@ -50,6 +50,9 @@ Mục **📥 Nhập liệu**:
 
 Hoặc bấm **Tải file** ngay trong thẻ Media để upload thẳng lên server (ảnh sẽ được tối ưu tự động).
 
+> 🔴 **Ngày sự kiện (đông người xem):** ưu tiên **Tải file** lên server. Link Google Drive/OneDrive có thể bị Google/Microsoft **chặn khi hàng nghìn người truy cập cùng lúc** → ảnh không hiện.
+> Nếu đã lỡ dán link ngoài: trong thẻ Media bấm **⬇️ Về server** — hệ thống tải file về server 1 lần rồi phục vụ ổn định (ô nào là link ngoài sẽ có nhãn **link ngoài** màu đỏ).
+
 **Gợi ý loại file:**
 - Ảnh Xưa/Nay: JPG/PNG ngang, nên ≥ 1600px.
 - Ảnh 360°: ảnh **equirectangular** (tỉ lệ 2:1, ví dụ 4096×2048).

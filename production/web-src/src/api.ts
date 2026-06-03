@@ -89,6 +89,9 @@ export const api = {
     });
   },
   deleteMedia: (id: string) => req(`/admin/media/${id}`, { method: 'DELETE' }),
+  // Kéo link Drive/OneDrive về host trên server
+  importMediaUrl: (url: string, kind: string, locationId?: string, lang?: string) =>
+    req<any>('/admin/media/import-url', { method: 'POST', body: JSON.stringify({ url, kind, locationId, lang }) }),
 
   // users (chỉ SUPERADMIN)
   adminUsers: () => req<User[]>('/admin/users'),

@@ -261,6 +261,17 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
     inp.click();
   };
 
+  // Kéo link ngoài (Drive/OneDrive) về host trên server — tránh Drive bị chặn khi đông người xem.
+  const importToServer = async (mk: string, key: string) => {
+    if (!loc) { setMsg('Lưu địa điểm trước rồi mới kéo về server.'); return; }
+    const link = String(f.links[key] || '').trim();
+    if (!/^https?:\/\//i.test(link)) { setMsg('Ô này chưa có link ngoài để kéo.'); return; }
+    setMsg('Đang kéo về server…');
+    try { const r: any = await api.importMediaUrl(link, mk, loc.id); setLink(key, r?.meta?.optimized || r?.url || ''); setMsg('Đã lưu về server ✓'); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  const isExternal = (u: any) => /^https?:\/\//i.test(String(u || ''));
+
   return (
     <div className="editor">
       <div className="editor-hd">
@@ -297,14 +308,20 @@ function LocationEditor({ loc, onSaved, onClose, onDeleted }: any) {
         {tab === 'media' && (
           <>
             <p className="muted">Dán <b>link chia sẻ</b> (Drive/OneDrive — tự chuyển sang link nhúng) hoặc <b>Tải file</b> lên server.</p>
+            <div className="warn-box">
+              ⚠️ <b>Ngày sự kiện đông người xem:</b> ưu tiên <b>Tải file</b> lên server. Link Google Drive/OneDrive
+              có thể bị chặn khi hàng nghìn người truy cập. Nếu đã lỡ dán link ngoài, bấm <b>⬇️ Về server</b> để
+              hệ thống tải về (chỉ tải 1 lần) rồi phục vụ ổn định từ server.
+            </div>
             {[['old', 'Ảnh Xưa', 'OLD', 'image'], ['now', 'Ảnh Nay', 'NOW', 'image'], ['pano360', 'Ảnh 360°', 'PANO360', 'image'], ['audio', 'Audio thuyết minh', 'AUDIO', 'audio']].map(([key, lbl, mk, kind]) => (
               <div className="media-row" key={key}>
-                <label>{lbl}</label>
+                <label>{lbl} {isExternal(f.links[key]) && <span className="ext-badge" title="Link ngoài — nên kéo về server">link ngoài</span>}</label>
                 <div className="frow">
                   <input value={f.links[key] || ''} placeholder="Dán link…"
                     onChange={(e) => setLink(key, e.target.value)}
                     onBlur={(e) => setLink(key, normalize(e.target.value, kind as any))} />
-                  <button className="asec" type="button" onClick={() => uploadFile(mk, key)}>Tải file</button>
+                  {isExternal(f.links[key]) && <button className="asec" type="button" title="Kéo về host trên server" onClick={() => importToServer(mk as string, key as string)}>⬇️ Về server</button>}
+                  <button className="asec" type="button" onClick={() => uploadFile(mk as string, key as string)}>Tải file</button>
                 </div>
                 {f.links[key] && kind === 'image' && <img className="media-prev" src={f.links[key]} alt="" onError={(e: any) => (e.target.style.opacity = 0.25)} />}
                 {f.links[key] && kind === 'audio' && <audio controls src={f.links[key]} style={{ width: '100%', marginTop: 6 }} />}

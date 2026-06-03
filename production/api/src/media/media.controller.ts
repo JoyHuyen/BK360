@@ -12,7 +12,7 @@ import { FileInterceptor } from '@nestjs/platform-express';
 import { diskStorage } from 'multer';
 import { extname } from 'path';
 import { MediaService } from './media.service';
-import { UploadMediaDto } from './media.dto';
+import { ImportUrlDto, UploadMediaDto } from './media.dto';
 import { Roles } from '../common/roles.decorator';
 import { CurrentUser, JwtUser } from '../common/current-user.decorator';
 
@@ -41,6 +41,13 @@ export class MediaController {
   ) {
     if (!file) throw new BadRequestException('Thiếu file tải lên');
     return this.svc.create(file, dto, user.sub);
+  }
+
+  // Kéo link ngoài (Drive/OneDrive) về host trên server.
+  @Roles('EDITOR')
+  @Post('import-url')
+  importUrl(@Body() dto: ImportUrlDto, @CurrentUser() user: JwtUser) {
+    return this.svc.importFromUrl(dto, user.sub);
   }
 
   @Roles('EDITOR')
