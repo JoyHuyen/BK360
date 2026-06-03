@@ -1,6 +1,23 @@
 import type { Lang, Screen } from '../types';
 import { t } from '../i18n';
 
+// Hình học dây cờ võng (parabol): top0 = mép treo 2 đầu, dip = độ võng giữa.
+const BT = (() => {
+  const N = 13, top0 = 8, dip = 36;
+  const flags = Array.from({ length: N }).map((_, i) => {
+    const x = i / (N - 1);
+    return {
+      i,
+      left: x * 100,
+      top: top0 + dip * (1 - Math.pow(2 * x - 1, 2)), // bám đúng đường cong của dây
+      rot: (2 * x - 1) * 16, // nghiêng theo độ dốc của dây
+      delay: ((i * 0.37) % 2).toFixed(2),
+      dur: (2.4 + ((i % 3) * 0.45)).toFixed(2),
+    };
+  });
+  return { top0, dip, flags };
+})();
+
 export default function Welcome({
   lang,
   setLang,
@@ -24,10 +41,15 @@ export default function Welcome({
 
   return (
     <div className="screen show welcome">
-      {/* Trang trí lễ hội */}
+      {/* Trang trí lễ hội — dây cờ võng xuống + rung rinh */}
       <div className="bunting" aria-hidden="true">
-        {Array.from({ length: 13 }).map((_, i) => (
-          <i key={i} className={`fl c${i % 6}`} />
+        <svg className="bstring" viewBox="0 0 100 96" preserveAspectRatio="none">
+          <path d={`M0 ${BT.top0} Q50 ${BT.top0 + 2 * BT.dip} 100 ${BT.top0}`} fill="none" stroke="#bd7c42" strokeWidth={2} vectorEffect="non-scaling-stroke" />
+        </svg>
+        {BT.flags.map((f) => (
+          <span key={f.i} className="bflag" style={{ left: `${f.left}%`, top: `${f.top}px`, transform: `translateX(-50%) rotate(${f.rot}deg)` }}>
+            <i className={`c${f.i % 6}`} style={{ animationDelay: `${f.delay}s`, animationDuration: `${f.dur}s` }} />
+          </span>
         ))}
       </div>
       <div className="fest-rays" aria-hidden="true" />
