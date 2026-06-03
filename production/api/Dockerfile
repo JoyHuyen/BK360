@@ -1,6 +1,8 @@
 # ---- build ----
-FROM node:20-alpine AS build
+# node:20-slim (Debian) — Prisma/argon2/sharp chạy ổn định hơn alpine (tránh lỗi libssl/musl).
+FROM node:20-slim AS build
 WORKDIR /app
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm ci
 COPY prisma ./prisma
@@ -9,10 +11,10 @@ COPY . .
 RUN npm run build
 
 # ---- run ----
-# Cài đủ deps (gồm prisma CLI + ts-node) để chạy migrate/db push + seed lúc khởi động.
-FROM node:20-alpine AS run
+FROM node:20-slim AS run
 WORKDIR /app
 ENV NODE_ENV=production
+RUN apt-get update && apt-get install -y --no-install-recommends openssl ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY package*.json ./
 RUN npm ci
 COPY prisma ./prisma
