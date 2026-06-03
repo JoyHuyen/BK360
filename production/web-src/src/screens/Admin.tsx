@@ -1157,8 +1157,7 @@ function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: ()
         <input value={name} onChange={(e) => setName(e.target.value)} placeholder="vd: Nguyễn Văn A" />
         <label title="Biên tập: nhập/sửa nội dung. Quản trị cao nhất: thêm cả tài khoản. Chỉ xem: chỉ đăng nhập xem.">Vai trò <span className="hint-q" title="Biên tập: nhập/sửa nội dung. Quản trị cao nhất: thêm cả tài khoản. Chỉ xem: chỉ đăng nhập xem.">ⓘ</span></label>
         <select value={role} onChange={(e) => setRole(e.target.value)}>
-          <option value="EDITOR">Biên tập (đội media)</option>
-          <option value="VIEWER">Chỉ xem</option>
+          <option value="EDITOR">Biên tập viên (đội media)</option>
           <option value="SUPERADMIN">Quản trị cao nhất</option>
         </select>
         <label>{user ? 'Đặt lại mật khẩu (bỏ trống nếu giữ nguyên)' : 'Mật khẩu (≥ 6 ký tự)'}</label>
