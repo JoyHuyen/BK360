@@ -63,12 +63,15 @@ export default function CampusMap({
   const liveLocs = new Set(campaign?.schedule.filter((e) => e.live).map((e) => e.loc) ?? []);
   const visible = locations.filter((l) => !l.isHidden);
 
-  // ----- Zoom & pan -----
+  // ----- Zoom & pan (imperative để không re-render mỗi khung hình → mượt trên mobile) -----
   const svgRef = useRef<SVGSVGElement>(null);
+  const gRef = useRef<SVGGElement>(null);
   const [view, setView] = useState({ k: 1, x: 0, y: 0 });
+  const viewRef = useRef(view); viewRef.current = view;
   const drag = useRef<{ px: number; py: number; x0: number; y0: number } | null>(null);
   const pinch = useRef<{ d: number } | null>(null);
   const moved = useRef(false);
+  const raf = useRef(0);
   const MIN_K = 1, MAX_K = 5;
 
   const toVB = (cx: number, cy: number) => {
@@ -78,41 +81,51 @@ export default function CampusMap({
     const ox = (r.width - VB_W * s) / 2, oy = (r.height - VB_H * s) / 2;
     return { x: (cx - r.left - ox) / s, y: (cy - r.top - oy) / s };
   };
-  const clamp = (k: number, x: number, y: number) => ({
+  const clampV = (k: number, x: number, y: number) => ({
     k, x: Math.min(0, Math.max(VB_W * (1 - k), x)), y: Math.min(0, Math.max(VB_H * (1 - k), y)),
   });
-  const zoomTo = (P: { x: number; y: number }, kt: number) =>
-    setView((v) => {
-      const k = Math.max(MIN_K, Math.min(MAX_K, kt));
-      const x = P.x - (P.x - v.x) * (k / v.k);
-      const y = P.y - (P.y - v.y) * (k / v.k);
-      return clamp(k, x, y);
-    });
+  const applyT = (v: { k: number; x: number; y: number }) => {
+    if (gRef.current) gRef.current.setAttribute('transform', `translate(${v.x} ${v.y}) scale(${v.k})`);
+  };
+  // Trong cử chỉ: chỉ đổi transform (gộp theo rAF), KHÔNG setState.
+  const live = (v: any) => { viewRef.current = v; if (!raf.current) raf.current = requestAnimationFrame(() => { raf.current = 0; applyT(viewRef.current); }); };
+  // Rời rạc (nút/cuộn/thả tay): cập nhật state để render & cursor.
+  const commit = (v: any) => { viewRef.current = v; setView(v); };
+
+  const zoomCompute = (P: { x: number; y: number }, kt: number) => {
+    const v = viewRef.current;
+    const k = Math.max(MIN_K, Math.min(MAX_K, kt));
+    return clampV(k, P.x - (P.x - v.x) * (k / v.k), P.y - (P.y - v.y) * (k / v.k));
+  };
   const center = () => ({ x: VB_W / 2, y: VB_H / 2 });
-  const zoomBtn = (factor: number) => zoomTo(center(), view.k * factor);
-  const reset = () => setView({ k: 1, x: 0, y: 0 });
+  const zoomBtn = (factor: number) => commit(zoomCompute(center(), viewRef.current.k * factor));
+  const reset = () => commit({ k: 1, x: 0, y: 0 });
 
   const dist = (t: TouchList) => Math.hypot(t[0].clientX - t[1].clientX, t[0].clientY - t[1].clientY);
-  const onDown = (cx: number, cy: number) => { drag.current = { px: cx, py: cy, x0: view.x, y0: view.y }; moved.current = false; };
+  const onDown = (cx: number, cy: number) => { drag.current = { px: cx, py: cy, x0: viewRef.current.x, y0: viewRef.current.y }; moved.current = false; };
   const onMoveTo = (cx: number, cy: number) => {
     if (!drag.current) return;
     const P0 = toVB(drag.current.px, drag.current.py), P1 = toVB(cx, cy);
     if (Math.abs(cx - drag.current.px) + Math.abs(cy - drag.current.py) > 6) moved.current = true;
-    setView((v) => clamp(v.k, drag.current!.x0 + (P1.x - P0.x), drag.current!.y0 + (P1.y - P0.y)));
+    const v = viewRef.current;
+    live(clampV(v.k, drag.current.x0 + (P1.x - P0.x), drag.current.y0 + (P1.y - P0.y)));
   };
-  const end = () => { drag.current = null; pinch.current = null; };
+  const end = () => {
+    if (raf.current) { cancelAnimationFrame(raf.current); raf.current = 0; }
+    const wasGesture = !!(drag.current || pinch.current);
+    drag.current = null; pinch.current = null;
+    if (wasGesture) commit(viewRef.current);
+  };
 
-  // luôn đọc view mới nhất trong listener đăng ký 1 lần
-  const viewRef = useRef(view); viewRef.current = view;
   useEffect(() => {
     const svg = svgRef.current; if (!svg) return;
-    const wheel = (e: WheelEvent) => { e.preventDefault(); zoomTo(toVB(e.clientX, e.clientY), (e.deltaY < 0 ? 1.2 : 1 / 1.2) * viewRef.current.k); };
+    const wheel = (e: WheelEvent) => { e.preventDefault(); commit(zoomCompute(toVB(e.clientX, e.clientY), viewRef.current.k * (e.deltaY < 0 ? 1.2 : 1 / 1.2))); };
     const mm = (e: MouseEvent) => onMoveTo(e.clientX, e.clientY);
     const mu = () => end();
     svg.addEventListener('wheel', wheel, { passive: false });
     window.addEventListener('mousemove', mm);
     window.addEventListener('mouseup', mu);
-    return () => { svg.removeEventListener('wheel', wheel); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); };
+    return () => { svg.removeEventListener('wheel', wheel); window.removeEventListener('mousemove', mm); window.removeEventListener('mouseup', mu); if (raf.current) cancelAnimationFrame(raf.current); };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -123,7 +136,7 @@ export default function CampusMap({
   const onTouchMove = (e: any) => {
     if (e.touches.length === 2 && pinch.current) {
       const d1 = dist(e.touches), mid = { x: (e.touches[0].clientX + e.touches[1].clientX) / 2, y: (e.touches[0].clientY + e.touches[1].clientY) / 2 };
-      zoomTo(toVB(mid.x, mid.y), viewRef.current.k * (d1 / pinch.current.d)); pinch.current.d = d1; moved.current = true;
+      live(zoomCompute(toVB(mid.x, mid.y), viewRef.current.k * (d1 / pinch.current.d))); pinch.current.d = d1; moved.current = true;
     } else if (e.touches.length === 1) onMoveTo(e.touches[0].clientX, e.touches[0].clientY);
   };
 
@@ -141,7 +154,7 @@ export default function CampusMap({
         onTouchMove={onTouchMove}
         onTouchEnd={end}
       >
-        <g transform={`translate(${view.x} ${view.y}) scale(${view.k})`}>
+        <g ref={gRef} transform={`translate(${view.x} ${view.y}) scale(${view.k})`} style={{ willChange: 'transform' }}>
           <image href={mapBg || MAP_URL} x={0} y={0} width={VB_W} height={VB_H} preserveAspectRatio="none" />
           {visible.map((l) => {
             const evt = mode === 'event' && eventLocs.has(l.slug);
