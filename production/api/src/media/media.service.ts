@@ -98,7 +98,7 @@ export class MediaService {
   private async cleanupOld(kind: any, locationId: string | undefined, keepId: string) {
     let where: any;
     if (locationId) where = { locationId, kind, id: { not: keepId } };
-    else if (kind === 'MAPBG') where = { kind: 'MAPBG', locationId: null, id: { not: keepId } };
+    else if (kind === 'MAPBG' || kind === 'WELCOMEBG') where = { kind, locationId: null, id: { not: keepId } };
     else return;
 
     const dir = process.env.MEDIA_DIR ?? '/data/media';

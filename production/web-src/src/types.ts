@@ -13,6 +13,7 @@ export interface WelcomeConfig {
   subtitle?: { vi?: string; en?: string };
   years?: string;
   effects?: boolean; // bật hiệu ứng lễ hội (dây cờ + confetti), mặc định bật
+  bg?: string | null; // ảnh nền màn chào (tuỳ chọn)
 }
 export interface Project {
   id?: string;

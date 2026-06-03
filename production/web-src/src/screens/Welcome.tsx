@@ -55,6 +55,10 @@ export default function Welcome({
   const tagline = w.tagline?.[lang] || t('appTag', lang);
   const subtitle = w.subtitle?.[lang] || t('subtitle', lang);
   const effects = w.effects !== false; // mặc định bật
+  // Ảnh nền tuỳ chọn: phủ lớp kem trong suốt phía trên để giữ tông sáng & chữ dễ đọc.
+  const bgStyle = w.bg
+    ? { backgroundImage: `linear-gradient(rgba(255,248,238,.62), rgba(255,235,219,.82)), url(${w.bg})`, backgroundSize: 'cover', backgroundPosition: 'center' }
+    : undefined;
   const tiles: { id: Screen; icon: string; bg: string; fg?: string; title: string; desc: string }[] = [
     { id: 'map2d', icon: '🗺️', bg: '#9e1b32', title: t('map2d', lang), desc: t('map2dDesc', lang) },
     { id: 'vr360', icon: '🌐', bg: '#0e8a8a', title: t('vr360', lang), desc: t('vr360Desc', lang) },
@@ -64,7 +68,7 @@ export default function Welcome({
   ];
 
   return (
-    <div className="screen show welcome">
+    <div className="screen show welcome" style={bgStyle}>
       {/* Trang trí lễ hội — bật/tắt theo cấu hình */}
       {effects && <>
       <div className="bunting" aria-hidden="true">

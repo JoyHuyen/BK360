@@ -785,19 +785,29 @@ function WelcomePanel({ welcome, reload }: any) {
     ribbonVi: welcome?.ribbon?.vi || '', ribbonEn: welcome?.ribbon?.en || '',
     tagVi: welcome?.tagline?.vi || '', tagEn: welcome?.tagline?.en || '',
     subVi: welcome?.subtitle?.vi || '', subEn: welcome?.subtitle?.en || '',
-    years: welcome?.years || '', effects: welcome?.effects !== false,
+    years: welcome?.years || '', effects: welcome?.effects !== false, bg: welcome?.bg || '',
   });
   const [f, setF] = useState<any>(init);
   const [msg, setMsg] = useState('');
   useEffect(() => { setF(init()); }, [welcome]);
   const set = (k: string, v: any) => setF((p: any) => ({ ...p, [k]: v }));
 
+  const uploadBg = () => {
+    const inp = document.createElement('input'); inp.type = 'file'; inp.accept = 'image/*';
+    inp.onchange = async () => {
+      const file = inp.files?.[0]; if (!file) return; setMsg('Đang tải ảnh nền…');
+      try { const r: any = await api.uploadMedia(file, 'WELCOMEBG'); set('bg', r?.meta?.optimized || r?.url || ''); setMsg('Đã tải ✓ — nhớ bấm Lưu.'); }
+      catch (e: any) { setMsg('Lỗi tải: ' + e.message); }
+    };
+    inp.click();
+  };
+
   const save = async () => {
     const payload = {
       ribbon: { vi: f.ribbonVi || undefined, en: f.ribbonEn || undefined },
       tagline: { vi: f.tagVi || undefined, en: f.tagEn || undefined },
       subtitle: { vi: f.subVi || undefined, en: f.subEn || undefined },
-      years: f.years || undefined, effects: !!f.effects,
+      years: f.years || undefined, effects: !!f.effects, bg: f.bg || null,
     };
     setMsg('Đang lưu…');
     try { await api.updateProject({ welcome: payload }); setMsg('Đã lưu ✓'); reload(); }
@@ -830,6 +840,22 @@ function WelcomePanel({ welcome, reload }: any) {
         <textarea rows={2} value={f.subVi} onChange={(e) => set('subVi', e.target.value)} placeholder="Khám phá Đại học Bách khoa Hà Nội — chọn cách bạn muốn tham quan." />
         <label>Mô tả (EN)</label>
         <textarea rows={2} value={f.subEn} onChange={(e) => set('subEn', e.target.value)} placeholder="Explore Hanoi University of Science and Technology — choose how to visit." />
+
+        <label>Ảnh nền màn chào (tuỳ chọn)</label>
+        {f.bg ? (
+          <div className="welcome-bg-prev">
+            <img src={f.bg} alt="" />
+            <button className="asec" type="button" onClick={() => set('bg', '')}>Xoá ảnh nền</button>
+          </div>
+        ) : (
+          <div className="dropzone mapdrop" onClick={uploadBg} role="button">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" />
+            </svg>
+            <b>Tải ảnh nền</b>
+            <span>Ảnh ngang. App tự phủ lớp sáng mờ để chữ vẫn rõ. Bỏ trống = nền lễ hội mặc định.</span>
+          </div>
+        )}
 
         <label className="chk-row" style={{ marginTop: 14 }} title="Dây cờ + confetti trên màn chào">
           <input type="checkbox" checked={f.effects} onChange={(e) => set('effects', e.target.checked)} />

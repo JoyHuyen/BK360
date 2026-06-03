@@ -28,6 +28,7 @@ enum MediaKind {
   AUDIO
   MODEL3D
   MAPBG
+  WELCOMEBG
 }
 
 // Mỗi "project" là một bản đồ/sự kiện độc lập (BK360, Khai giảng, ...).
