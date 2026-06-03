@@ -709,7 +709,6 @@ function ImportPanel({ locs, reload }: any) {
 /* ===================== BẢN ĐỒ NỀN 2D ===================== */
 function MapPanel({ mapBg, reload }: any) {
   const [bg, setBg] = useState<string | null>(mapBg ?? null);
-  const [link, setLink] = useState('');
   const [msg, setMsg] = useState('');
   useEffect(() => { setBg(mapBg ?? null); }, [mapBg]);
 
@@ -726,12 +725,6 @@ function MapPanel({ mapBg, reload }: any) {
       catch (e: any) { setMsg('Lỗi tải: ' + e.message); }
     };
     inp.click();
-  };
-  const fromLink = async () => {
-    if (!/^https?:\/\//i.test(link.trim())) { setMsg('Dán link http(s).'); return; }
-    setMsg('Đang kéo ảnh về server…');
-    try { const r: any = await api.importMediaUrl(link.trim(), 'MAPBG'); await save(r?.meta?.optimized || r?.url || ''); setLink(''); }
-    catch (e: any) { setMsg('Lỗi: ' + e.message); }
   };
   const isDefault = !bg;
 
@@ -750,11 +743,6 @@ function MapPanel({ mapBg, reload }: any) {
             </svg>
             <b>Tải ảnh nền lên</b>
             <span>PNG/JPG ngang, tỉ lệ ~5:4 (≈1250×1070). Bấm để chọn.</span>
-          </div>
-          <div className="or-row"><span>hoặc</span></div>
-          <div className="frow">
-            <input placeholder="Dán link ảnh (Drive/OneDrive)…" value={link} onChange={(e) => setLink(e.target.value)} />
-            <button className="asec" type="button" onClick={fromLink}>Dùng link</button>
           </div>
           {msg && <div className="msg" style={{ marginTop: 10 }}>{msg}</div>}
         </div>
