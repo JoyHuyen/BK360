@@ -36,12 +36,12 @@ const MAP_H = 1070;
 
 // Sidebar gom nhóm theo tính năng: Bản đồ 2D · VR360 · Sự kiện · Hệ thống.
 const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: string; super?: boolean }[] }[] = [
-  { items: [{ id: 'overview', icon: '🏠', label: 'Tổng quan' }] },
+  { items: [{ id: 'overview', icon: '📊', label: 'Dashboard' }] },
   {
     title: 'Bản đồ 2D',
     items: [
-      { id: 'locations', icon: '📍', label: 'Địa điểm' },
       { id: 'map', icon: '🖼️', label: 'Ảnh nền 2D' },
+      { id: 'locations', icon: '📍', label: 'Địa điểm' },
     ],
   },
   {
