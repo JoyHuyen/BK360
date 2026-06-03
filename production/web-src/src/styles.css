@@ -19,20 +19,46 @@ body{font-family:"Segoe UI",system-ui,-apple-system,Arial,sans-serif;color:var(-
 .fatal button{margin-top:14px}
 
 /* Welcome */
-.welcome{background:linear-gradient(165deg,#4d0e1d,#2a0810 55%,#140509);overflow-y:auto}
-.welcome .wbg{position:absolute;inset:0;opacity:.12}
-.welcome .wrap{position:relative;z-index:1;padding:calc(28px + var(--safe-t)) 22px 26px;display:flex;flex-direction:column;min-height:100%}
-.badge70{align-self:flex-start;background:var(--gold);color:#3a2b00;font-weight:800;font-size:12px;padding:5px 13px;border-radius:20px}
-.welcome h1{color:#fff;font-size:42px;font-weight:800;margin-top:16px;line-height:1}
-.welcome .tag{color:var(--gold);font-size:21px;font-style:italic;margin-top:4px}
-.welcome .sub{color:#aecbe8;font-size:13.5px;margin-top:10px;max-width:520px}
-.opts{margin-top:26px;display:flex;flex-direction:column;gap:14px}
-.opt{display:flex;align-items:center;gap:16px;padding:18px;border-radius:18px;cursor:pointer;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.14);transition:.18s}
-.opt:hover{background:rgba(255,255,255,.14);transform:translateY(-2px)}
-.opt .ic{width:58px;height:58px;flex:0 0 auto;border-radius:15px;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff}
-.opt .t b{display:block;color:#fff;font-size:18px}
-.opt .t span{display:block;color:#b9cfe6;font-size:12.5px;margin-top:3px;line-height:1.35}
-.opt .arw{margin-left:auto;color:#fff;opacity:.5;font-size:22px}
+.welcome{background:radial-gradient(125% 80% at 50% -8%, #6e1226 0%, #3a0a14 42%, #1b0610 74%, #0f0407 100%);overflow-y:auto}
+.welcome .wrap{position:relative;z-index:1;padding:calc(22px + var(--safe-t)) 22px calc(24px + var(--safe-b));display:flex;flex-direction:column;align-items:center;text-align:center;min-height:100%}
+
+/* Trang trí lễ hội */
+.fest-glow{position:absolute;top:-14%;left:50%;transform:translateX(-50%);width:520px;height:520px;max-width:130vw;background:radial-gradient(circle, rgba(245,179,1,.30), rgba(245,179,1,0) 62%);pointer-events:none;z-index:0}
+.fest-rays{position:absolute;top:-180px;left:50%;width:780px;height:780px;max-width:170vw;transform:translateX(-50%);pointer-events:none;z-index:0;opacity:.10;
+  background:repeating-conic-gradient(from 0deg at 50% 50%, var(--gold) 0deg 5deg, transparent 5deg 18deg);
+  -webkit-mask:radial-gradient(circle,#000 0 55%,transparent 60%);mask:radial-gradient(circle,#000 0 55%,transparent 60%);
+  animation:spin 70s linear infinite}
+@keyframes spin{to{transform:translateX(-50%) rotate(360deg)}}
+.confetti{position:absolute;inset:0;overflow:hidden;pointer-events:none;z-index:0}
+.confetti .cf{position:absolute;top:-14px;width:8px;height:12px;border-radius:2px;opacity:0;animation:fall linear infinite}
+.confetti .c0{background:var(--gold)}.confetti .c1{background:#fff}.confetti .c2{background:var(--bk-red2)}.confetti .c3{background:#ffd97a}
+@keyframes fall{0%{transform:translateY(-20px) rotate(0);opacity:0}12%{opacity:.85}100%{transform:translateY(108vh) rotate(560deg);opacity:.85}}
+
+.kicker{display:inline-block;color:var(--gold);font-weight:800;font-size:11px;letter-spacing:2px;border:1px solid rgba(245,179,1,.45);background:rgba(245,179,1,.08);padding:5px 14px;border-radius:30px}
+
+.emblem{position:relative;margin-top:22px;width:138px;height:138px;border-radius:50%;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  background:radial-gradient(circle at 50% 34%, #320a12, #160508);
+  box-shadow:0 0 0 3px rgba(245,179,1,.92),0 0 0 9px rgba(245,179,1,.16),0 16px 44px rgba(0,0,0,.55)}
+.emblem::after{content:"";position:absolute;inset:0;border-radius:50%;background:linear-gradient(135deg,rgba(255,255,255,.4),transparent 42%);opacity:.45;pointer-events:none}
+.em70{font-size:62px;font-weight:800;line-height:.9;letter-spacing:-2px;background:linear-gradient(180deg,#ffe9a8,#f5b301 55%,#d98e00);-webkit-background-clip:text;background-clip:text;color:transparent}
+.emyr{font-size:13px;font-weight:800;letter-spacing:6px;padding-left:6px;color:var(--gold);margin-top:1px}
+.years{margin-top:14px;color:#fff;font-weight:700;font-size:13px;letter-spacing:3px;background:linear-gradient(120deg,var(--bk-red),var(--bk-red2));padding:5px 16px;border-radius:30px;box-shadow:0 6px 16px rgba(0,0,0,.4)}
+
+.welcome h1.brand{color:#fff;font-size:46px;font-weight:800;margin-top:16px;line-height:1;letter-spacing:1px}
+.welcome h1.brand .g{background:linear-gradient(180deg,#ffe9a8,#f5b301);-webkit-background-clip:text;background-clip:text;color:transparent}
+.welcome .tag{color:var(--gold);font-size:20px;font-style:italic;margin-top:6px}
+.welcome .sub{color:#ecccd1;font-size:13.5px;margin-top:10px;max-width:440px;line-height:1.5}
+
+.opts{margin-top:24px;display:flex;flex-direction:column;gap:13px;width:100%;max-width:460px;text-align:left}
+.opt{position:relative;display:flex;align-items:center;gap:15px;padding:16px;border-radius:18px;cursor:pointer;background:rgba(255,255,255,.07);border:1px solid rgba(255,255,255,.16);transition:.18s;overflow:hidden}
+.opt::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px;background:var(--gold);opacity:.9}
+.opt:hover,.opt:active{background:rgba(255,255,255,.14);transform:translateY(-2px)}
+.opt .ic{width:54px;height:54px;flex:0 0 auto;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;color:#fff;box-shadow:0 6px 14px rgba(0,0,0,.3)}
+.opt .t b{display:block;color:#fff;font-size:17px}
+.opt .t span{display:block;color:#e7cdd2;font-size:12.5px;margin-top:3px;line-height:1.35}
+.opt .arw{margin-left:auto;color:var(--gold);opacity:.85;font-size:24px}
+.welcome-foot{margin-top:24px;color:rgba(255,255,255,.5);font-size:11.5px;letter-spacing:.4px}
+@media (prefers-reduced-motion:reduce){.fest-rays{animation:none}.confetti{display:none}}
 .lang-btn,.admin-btn{position:absolute;top:calc(16px + var(--safe-t));width:42px;height:42px;border-radius:12px;border:1px solid rgba(255,255,255,.22);background:rgba(255,255,255,.1);color:#fff;font-size:15px;font-weight:700;cursor:pointer;z-index:3}
 .admin-btn{right:18px;font-size:18px}
 .lang-btn{right:68px}

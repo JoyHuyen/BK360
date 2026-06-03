@@ -14,39 +14,60 @@ export default function Welcome({
   isAdmin: boolean;
   onGo: (s: Screen) => void;
 }) {
+  const tiles: { id: Screen; icon: string; bg: string; fg?: string; title: string; desc: string }[] = [
+    { id: 'map2d', icon: '🗺️', bg: '#9e1b32', title: t('map2d', lang), desc: t('map2dDesc', lang) },
+    { id: 'vr360', icon: '🌐', bg: '#26323f', title: t('vr360', lang), desc: t('vr360Desc', lang) },
+    ...(enabledCampaigns > 0
+      ? [{ id: 'event' as Screen, icon: '⭐', bg: '#f5b301', fg: '#3a2b00', title: t('events', lang), desc: t('eventsDesc', lang) }]
+      : []),
+  ];
+
   return (
     <div className="screen show welcome">
-      <div className="wbg" />
+      {/* Trang trí lễ hội */}
+      <div className="fest-rays" aria-hidden="true" />
+      <div className="fest-glow" aria-hidden="true" />
+      <div className="confetti" aria-hidden="true">
+        {Array.from({ length: 16 }).map((_, i) => (
+          <span
+            key={i}
+            className={`cf c${i % 4}`}
+            style={{ left: `${(i * 6.3 + 3) % 100}%`, animationDelay: `${(i % 8) * 0.8}s`, animationDuration: `${6 + (i % 5)}s` }}
+          />
+        ))}
+      </div>
+
       <button className="lang-btn" onClick={() => setLang(lang === 'vi' ? 'en' : 'vi')}>
         {lang === 'vi' ? 'EN' : 'VI'}
       </button>
       <button className="admin-btn" onClick={() => onGo('admin')} title={t('admin', lang)}>
         {isAdmin ? '🔓' : '🔒'}
       </button>
+
       <div className="wrap">
-        <span className="badge70">★ 1956 – 2026 · 70 {lang === 'vi' ? 'NĂM' : 'YEARS'}</span>
-        <h1>BK360</h1>
+        <div className="kicker">★ {lang === 'vi' ? 'KỶ NIỆM 70 NĂM THÀNH LẬP' : '70th ANNIVERSARY'} ★</div>
+
+        <div className="emblem">
+          <span className="em70">70</span>
+          <span className="emyr">{lang === 'vi' ? 'NĂM' : 'YEARS'}</span>
+        </div>
+        <div className="years">1956 — 2026</div>
+
+        <h1 className="brand">BK<span className="g">360</span></h1>
         <div className="tag">{t('appTag', lang)}</div>
         <div className="sub">{t('subtitle', lang)}</div>
+
         <div className="opts">
-          <div className="opt" onClick={() => onGo('map2d')}>
-            <div className="ic" style={{ background: '#9e1b32' }}>🗺️</div>
-            <div className="t"><b>{t('map2d', lang)}</b><span>{t('map2dDesc', lang)}</span></div>
-            <div className="arw">›</div>
-          </div>
-          <div className="opt" onClick={() => onGo('vr360')}>
-            <div className="ic" style={{ background: '#26323f' }}>🌐</div>
-            <div className="t"><b>{t('vr360', lang)}</b><span>{t('vr360Desc', lang)}</span></div>
-            <div className="arw">›</div>
-          </div>
-          {enabledCampaigns > 0 && (
-            <div className="opt" onClick={() => onGo('event')}>
-              <div className="ic" style={{ background: '#f5b301', color: '#3a2b00' }}>⭐</div>
-              <div className="t"><b>{t('events', lang)}</b><span>{t('eventsDesc', lang)}</span></div>
+          {tiles.map((tl) => (
+            <div className="opt" key={tl.id} onClick={() => onGo(tl.id)}>
+              <div className="ic" style={{ background: tl.bg, color: tl.fg || '#fff' }}>{tl.icon}</div>
+              <div className="t"><b>{tl.title}</b><span>{tl.desc}</span></div>
               <div className="arw">›</div>
             </div>
-          )}
+          ))}
         </div>
+
+        <div className="welcome-foot">Đại học Bách khoa Hà Nội · 1956–2026</div>
       </div>
     </div>
   );
