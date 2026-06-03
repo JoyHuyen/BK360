@@ -659,26 +659,49 @@ function ImportPanel({ locs, reload }: any) {
     setPreview(null); reload();
   };
 
+  const pickFile = () => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx,.xls'; i.onchange = () => i.files?.[0] && parse(i.files[0]); i.click(); };
+
   return (
     <div className="adm-body">
-      <div className="adm-card" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap' }}>
-        <div style={{ flex: 1, minWidth: 200 }}>
-          <b>Bước 1 — Tải file mẫu</b>
-          <p className="muted" style={{ margin: '4px 0 0' }}>Gửi cho đội nội dung điền. Giữ nguyên tên sheet & dòng tiêu đề.</p>
+      <div className="adm-card import-step">
+        <div className="step-num">1</div>
+        <div className="step-body">
+          <b>Tải file mẫu</b>
+          <p className="muted" style={{ margin: '3px 0 0' }}>Gửi cho đội nội dung điền. Giữ nguyên tên sheet & dòng tiêu đề.</p>
         </div>
-        <button className="aprim" onClick={downloadTemplate}>⬇️ Tải template Excel</button>
+        <button className="asec" onClick={downloadTemplate}>
+          <svg viewBox="0 0 24 24" width="17" height="17" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" style={{ marginRight: 6 }}>
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M7 10l5 5 5-5" /><path d="M12 15V3" />
+          </svg>
+          Tải template
+        </button>
       </div>
-      <div className="dropzone" onClick={() => { const i = document.createElement('input'); i.type = 'file'; i.accept = '.xlsx,.xls'; i.onchange = () => i.files?.[0] && parse(i.files[0]); i.click(); }}>
-        📥 <b>Bước 2</b> — Bấm để chọn file Excel đã điền (Import hàng loạt)
-      </div>
-      {preview && (
-        <div className="adm-card">
-          <p>Đọc được: <b>{preview.locations.length}</b> địa điểm ({preview.news} mới, {preview.upd} cập nhật), <b>{preview.campaigns.length}</b> sự kiện.</p>
-          <p className="muted">Link Drive/OneDrive đã tự chuyển sang link nhúng. Bấm Áp dụng để ghi vào hệ thống.</p>
-          <div className="am-acts"><button className="aprim" onClick={apply}>✅ Áp dụng</button><button className="asec" onClick={() => setPreview(null)}>Huỷ</button></div>
+
+      <div className="adm-card">
+        <b>Bước 2 — Import file đã điền</b>
+        <div className="dropzone mapdrop" onClick={pickFile} role="button" style={{ marginTop: 10 }}>
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
+            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" /><path d="M14 2v6h6" /><path d="M8 13h8M8 17h8M8 9h2" />
+          </svg>
+          <b>Chọn file Excel (.xlsx)</b>
+          <span>Bấm để chọn file đã điền theo template.</span>
         </div>
-      )}
-      {log && <div className="adm-card">{log}</div>}
+
+        {preview && (
+          <div className="import-preview">
+            <div className="ip-row">
+              <span className="status-badge cus">Đọc được</span>
+              <b>{preview.locations.length}</b> địa điểm <span className="muted">({preview.news} mới · {preview.upd} cập nhật)</span> · <b>{preview.campaigns.length}</b> sự kiện
+            </div>
+            <p className="muted" style={{ margin: '8px 0' }}>Link Drive/OneDrive đã tự chuyển sang link nhúng. Bấm Áp dụng để ghi vào hệ thống.</p>
+            <div className="btn-row">
+              <button className="aprim" onClick={apply}>✅ Áp dụng</button>
+              <button className="asec" onClick={() => setPreview(null)}>Huỷ</button>
+            </div>
+          </div>
+        )}
+        {log && <div className="import-log">✓ {log}</div>}
+      </div>
     </div>
   );
 }
