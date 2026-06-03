@@ -25,6 +25,11 @@ export default function Welcome({
   return (
     <div className="screen show welcome">
       {/* Trang trí lễ hội */}
+      <div className="bunting" aria-hidden="true">
+        {Array.from({ length: 13 }).map((_, i) => (
+          <i key={i} className={`fl c${i % 6}`} />
+        ))}
+      </div>
       <div className="fest-rays" aria-hidden="true" />
       <div className="fest-glow" aria-hidden="true" />
       <div className="confetti" aria-hidden="true">
