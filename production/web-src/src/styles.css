@@ -301,6 +301,14 @@ svg.campus{width:100%;height:100%;display:block}
 .import-preview{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
 .ip-row{font-size:13.5px;color:#33425a;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .import-log{margin-top:12px;background:#e6f6ec;border:1px solid #b6e3c4;color:#1b7a3d;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600}
+/* Nhật ký hoạt động */
+.log-list{display:flex;flex-direction:column;margin-top:6px}
+.log-row{display:flex;align-items:center;gap:10px;padding:8px 4px;border-bottom:1px solid #eef2f7;font-size:13px}
+.log-time{flex:0 0 auto;width:88px;color:#7a8699;font-variant-numeric:tabular-nums}
+.log-act{flex:0 0 auto;width:78px;text-align:center;font-size:11px;font-weight:700;padding:2px 0;border-radius:20px}
+.a-create{background:#e6f6ec;color:#1b7a3d}.a-update{background:#eef4fb;color:#2a6fb0}.a-delete{background:#fde8ea;color:#b3243a}.a-login{background:#f0ecfb;color:#6b46c1}
+.log-ent{flex:0 0 auto;width:90px;color:#334155;font-weight:600}
+.log-user{flex:1;min-width:0;color:#5a6678;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
 .adm-top-right{display:flex;align-items:center;gap:12px}
 .proj-switch{padding:7px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-weight:700;color:var(--bk-red);background:#fff;cursor:pointer;max-width:200px}
 .proj-pick{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:2px}

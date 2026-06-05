@@ -56,6 +56,7 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
     link: (<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>),
     home: (<><path d="M3 9.5L12 3l9 6.5" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></>),
     folder: (<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />),
+    clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
   };
   return (
     <svg className="nav-ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
@@ -92,6 +93,7 @@ const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: st
       // { id: 'import', icon: 'upload', label: 'Nhập liệu' },
       { id: 'projects', icon: 'folder', label: 'Dự án', super: true },
       { id: 'users', icon: 'users', label: 'Người dùng', super: true },
+      { id: 'audit', icon: 'clock', label: 'Nhật ký hoạt động', super: true },
     ],
   },
 ];
@@ -218,6 +220,7 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
         {nav === 'projects' && isSuper && <ProjectsPanel projects={projects} active={active} reloadProjects={loadProjects} onPick={setActive} />}
         {nav === 'users' && isSuper && <UsersPanel meId={user.id || user.sub} projects={projects} />}
+        {nav === 'audit' && isSuper && <AuditPanel />}
       </main>
     </div>
   );
@@ -1102,6 +1105,51 @@ function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
         </div>
         {msg && <div className="err">{msg}</div>}
         <div className="am-acts"><button className="aprim" onClick={save}>💾 Lưu</button><button className="asec" onClick={onClose}>Huỷ</button></div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== NHẬT KÝ HOẠT ĐỘNG (SUPERADMIN) ===================== */
+const AUD_ACT: Record<string, [string, string]> = {
+  CREATE: ['Tạo', 'a-create'], UPDATE: ['Sửa', 'a-update'], TOGGLE: ['Bật/tắt', 'a-update'],
+  DELETE: ['Xoá', 'a-delete'], LOGIN: ['Đăng nhập', 'a-login'],
+};
+const AUD_ENT: Record<string, string> = {
+  Location: 'Địa điểm', Campaign: 'Sự kiện', Scene: 'Điểm 360', Media: 'Media', User: 'Tài khoản', Auth: 'Phiên', Project: 'Dự án',
+};
+function fmtTime(iso: string) {
+  const d = new Date(iso); const p = (n: number) => String(n).padStart(2, '0');
+  return `${p(d.getDate())}/${p(d.getMonth() + 1)} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function AuditPanel() {
+  const [rows, setRows] = useState<any[]>([]);
+  const [msg, setMsg] = useState('');
+  const load = () => api.audit(300).then(setRows).catch((e: any) => setMsg(e.message));
+  useEffect(() => { load(); }, []);
+  return (
+    <div className="adm-body">
+      <div className="adm-card">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <h4 style={{ margin: 0, flex: 1 }}>Nhật ký hoạt động</h4>
+          <button className="asec" onClick={load}>↻ Làm mới</button>
+        </div>
+        <p className="muted" style={{ marginTop: 6 }}>Lịch sử thao tác của các tài khoản (tạo / sửa / xoá / đăng nhập), mới nhất ở trên. Tối đa 300 dòng gần nhất.</p>
+        {msg && <div className="msg">{msg}</div>}
+        <div className="log-list">
+          {rows.length === 0 && !msg && <p className="muted">Chưa có hoạt động nào.</p>}
+          {rows.map((r) => {
+            const a = AUD_ACT[r.action] || [r.action, 'a-update'];
+            return (
+              <div className="log-row" key={r.id}>
+                <span className="log-time">{fmtTime(r.at)}</span>
+                <span className={'log-act ' + a[1]}>{a[0]}</span>
+                <span className="log-ent">{AUD_ENT[r.entity] || r.entity}</span>
+                <span className="log-user">{r.user?.name || r.user?.email || 'hệ thống'}</span>
+              </div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );

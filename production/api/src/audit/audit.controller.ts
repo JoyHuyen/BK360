@@ -5,7 +5,7 @@ import { AuditService } from './audit.service';
 // Guards (JwtAuthGuard + RolesGuard) đã đăng ký GLOBAL qua APP_GUARD trong AuthModule,
 // nên KHÔNG dùng @UseGuards ở đây (AuditModule không import JwtModule → sẽ lỗi DI JwtService).
 @Controller('admin/audit')
-@Roles('EDITOR')
+@Roles('SUPERADMIN')
 export class AuditController {
   constructor(private readonly audit: AuditService) {}
 
