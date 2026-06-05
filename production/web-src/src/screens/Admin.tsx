@@ -775,7 +775,7 @@ function MapPanel({ mapBg, reload }: any) {
         <div className="adm-card">
           <h4 style={{ margin: '0 0 6px' }}>Ảnh nền bản đồ 2D</h4>
           <p className="muted" style={{ marginTop: 0 }}>
-            Tải ảnh sơ đồ khuôn viên riêng để thay nền. Pin địa điểm (tab <b>Vị trí</b>) đặt trên chính ảnh này và khớp trang người xem.
+            Tải ảnh sơ đồ khuôn viên riêng để thay nền. Pin địa điểm (tab <b>Ghim vị trí trên map</b>) đặt trên chính ảnh này và khớp trang người xem.
             Bỏ trống = dùng <b>bản đồ vẽ tay</b> mặc định.
           </p>
           <div className="dropzone mapdrop" onClick={upload} role="button" title="Bấm để chọn ảnh">
@@ -783,7 +783,7 @@ function MapPanel({ mapBg, reload }: any) {
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><path d="M17 8l-5-5-5 5" /><path d="M12 3v12" />
             </svg>
             <b>Tải ảnh nền lên</b>
-            <span>PNG/JPG ngang, tỉ lệ ~5:4 (≈1250×1070). Bấm để chọn.</span>
+            <span>Ưu tiên <b>SVG</b> (vector — nét ở mọi mức zoom). Hoặc PNG/JPG ngang ≥2000px, tỉ lệ ~5:4 (≈1250×1070).</span>
           </div>
           {msg && <div className="msg" style={{ marginTop: 10 }}>{msg}</div>}
         </div>
