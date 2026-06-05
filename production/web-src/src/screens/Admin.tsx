@@ -57,6 +57,7 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
     home: (<><path d="M3 9.5L12 3l9 6.5" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></>),
     folder: (<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />),
     clock: (<><circle cx="12" cy="12" r="9" /><path d="M12 7v5l3 2" /></>),
+    spark: (<path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9z" />),
   };
   return (
     <svg className="nav-ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
@@ -94,6 +95,7 @@ const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: st
       { id: 'projects', icon: 'folder', label: 'Dự án', super: true },
       { id: 'users', icon: 'users', label: 'Người dùng', super: true },
       { id: 'audit', icon: 'clock', label: 'Nhật ký hoạt động', super: true },
+      { id: 'changelog', icon: 'spark', label: 'Cập nhật hệ thống', super: true },
     ],
   },
 ];
@@ -221,6 +223,7 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         {nav === 'projects' && isSuper && <ProjectsPanel projects={projects} active={active} reloadProjects={loadProjects} onPick={setActive} />}
         {nav === 'users' && isSuper && <UsersPanel meId={user.id || user.sub} projects={projects} />}
         {nav === 'audit' && isSuper && <AuditPanel />}
+        {nav === 'changelog' && isSuper && <ChangelogPanel />}
       </main>
     </div>
   );
@@ -1150,6 +1153,60 @@ function AuditPanel() {
             );
           })}
         </div>
+      </div>
+    </div>
+  );
+}
+
+/* ===================== CẬP NHẬT HỆ THỐNG (SUPERADMIN) ===================== */
+// Ghi chú phiên bản — bổ sung mục mới ở ĐẦU mảng khi có cập nhật.
+const CHANGELOG: { ver: string; date: string; title: string; items: [string, string][] }[] = [
+  { ver: '1.6', date: '06/2026', title: 'Đa dự án & nhật ký', items: [
+    ['new', 'Tạo & quản lý nhiều dự án; gán biên tập viên theo từng dự án; người xem mở qua link ?project='],
+    ['new', 'Nhật ký hoạt động — admin xem mọi thao tác (tạo/sửa/xoá/đăng nhập) của tài khoản'],
+    ['new', 'Trang Cập nhật hệ thống (trang này)'],
+  ] },
+  { ver: '1.5', date: '06/2026', title: 'Màn chào & thương hiệu', items: [
+    ['new', 'Màn chào lễ hội 70 năm: dây cờ võng đu đưa, confetti, ruy băng "Chào mừng 70 năm"'],
+    ['new', 'Cấu hình màn chào: tiêu đề, ruy băng, mô tả, ảnh nền, bật/tắt hiệu ứng'],
+    ['improve', 'Chuẩn hoá màu thương hiệu ĐHBK (đỏ–vàng); giao diện admin sáng, bộ icon đồng bộ'],
+  ] },
+  { ver: '1.4', date: '06/2026', title: 'VR360 Street View', items: [
+    ['new', 'Điểm 360 (Scene) độc lập + mũi tên di chuyển giữa các cảnh kiểu Street View'],
+    ['new', 'Cấu hình tour: tự động xoay, điểm bắt đầu, sắp thứ tự, góc nhìn ban đầu'],
+  ] },
+  { ver: '1.3', date: '06/2026', title: 'Bản đồ 2D', items: [
+    ['new', 'Bản đồ vẽ tay + ghim pin địa điểm; tải ảnh nền 2D riêng (SVG/PNG)'],
+    ['improve', 'Zoom/pan mượt trên điện thoại; bản đồ vector nét ở mọi mức zoom'],
+  ] },
+  { ver: '1.2', date: '06/2026', title: 'Nội dung & media', items: [
+    ['new', 'Quản lý địa điểm, ảnh Xưa/Nay, ảnh 360°, audio thuyết minh; import Excel hàng loạt'],
+    ['improve', 'Chỉ giữ media lần cuối (tránh rác server); cảnh báo ảnh sai tỉ lệ'],
+  ] },
+  { ver: '1.1', date: '06/2026', title: 'Sẵn sàng cho ngày sự kiện', items: [
+    ['improve', 'Cache + nới rate-limit chống nghẽn khi đông người xem; kéo media về host server'],
+    ['new', 'Quản lý tài khoản biên tập viên'],
+  ] },
+  { ver: '1.0', date: '06/2026', title: 'Ra mắt', items: [
+    ['new', '3 chế độ: Bản đồ 2D · VR360 · Sự kiện 70 năm; đăng nhập quản trị thật'],
+  ] },
+];
+const CL_TYPE: Record<string, [string, string]> = { new: ['Mới', 'a-create'], improve: ['Cải tiến', 'a-update'], fix: ['Sửa', 'a-delete'] };
+function ChangelogPanel() {
+  return (
+    <div className="adm-body">
+      <div className="adm-card" style={{ maxWidth: 720 }}>
+        <h4 style={{ margin: '0 0 4px' }}>Cập nhật hệ thống</h4>
+        <p className="muted" style={{ marginTop: 0 }}>Lịch sử các đợt nâng cấp & tính năng mới của BK360.</p>
+        {CHANGELOG.map((v) => (
+          <div className="cl-ver" key={v.ver}>
+            <div className="cl-head"><b>v{v.ver}</b> · {v.title} <span className="cl-date">{v.date}</span></div>
+            {v.items.map(([t, txt], i) => {
+              const c = CL_TYPE[t] || CL_TYPE.new;
+              return <div className="cl-item" key={i}><span className={'log-act ' + c[1]}>{c[0]}</span><span>{txt}</span></div>;
+            })}
+          </div>
+        ))}
       </div>
     </div>
   );
