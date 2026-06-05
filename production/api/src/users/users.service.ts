@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { AuditService } from '../audit/audit.service';
 import { CreateUserDto, UpdateUserDto } from './users.dto';
 
-const SELECT = { id: true, email: true, name: true, role: true, lastLogin: true, createdAt: true };
+const SELECT = { id: true, email: true, name: true, role: true, projectIds: true, lastLogin: true, createdAt: true };
 
 @Injectable()
 export class UsersService {
@@ -24,7 +24,7 @@ export class UsersService {
     if (exists) throw new ConflictException('Email đã tồn tại');
     const passwordHash = await argon2.hash(dto.password);
     const user = await this.prisma.user.create({
-      data: { email, passwordHash, name: dto.name?.trim() || null, role: dto.role || Role.EDITOR },
+      data: { email, passwordHash, name: dto.name?.trim() || null, role: dto.role || Role.EDITOR, projectIds: dto.projectIds || [] },
       select: SELECT,
     });
     await this.audit.log(actorId, 'CREATE', 'User', user.id, { email, role: user.role });
@@ -44,6 +44,7 @@ export class UsersService {
     const data: any = {};
     if (dto.name !== undefined) data.name = dto.name?.trim() || null;
     if (dto.role !== undefined) data.role = dto.role;
+    if (dto.projectIds !== undefined) data.projectIds = dto.projectIds;
     if (dto.password) data.passwordHash = await argon2.hash(dto.password);
 
     const user = await this.prisma.user.update({ where: { id }, data, select: SELECT });

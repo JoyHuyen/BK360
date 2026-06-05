@@ -76,6 +76,7 @@ model User {
   passwordHash String
   name         String?
   role         Role     @default(EDITOR)
+  projectIds   String[] @default([]) // EDITOR: các project được phép quản lý (SUPERADMIN: tất cả)
   lastLogin    DateTime?
   createdAt    DateTime @default(now())
   auditLogs    AuditLog[]

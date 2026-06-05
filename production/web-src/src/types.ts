@@ -118,6 +118,7 @@ export interface User {
   email: string;
   role: string;
   name?: string;
+  projectIds?: string[];
 }
 
 export type Screen = 'welcome' | 'map2d' | 'vr360' | 'event' | 'admin';

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import * as XLSX from 'xlsx';
-import { api, setToken } from '../api';
+import { api, setToken, setActiveProject } from '../api';
 import type { Lang, Location, Campaign, User, Project, Vr360Config, Scene } from '../types';
 import Panorama from '../components/Panorama';
 
@@ -55,6 +55,7 @@ function NavIcon({ name, size = 20 }: { name: string; size?: number }) {
     arrow: (<><path d="M5 12h14" /><path d="M12 5l7 7-7 7" /></>),
     link: (<><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" /><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71" /></>),
     home: (<><path d="M3 9.5L12 3l9 6.5" /><path d="M5 10v10a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V10" /></>),
+    folder: (<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z" />),
   };
   return (
     <svg className="nav-ic" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round">{p[name]}</svg>
@@ -89,6 +90,7 @@ const NAV_GROUPS: { title?: string; items: { id: string; icon: string; label: st
     items: [
       // Tạm ẩn Nhập liệu (bật lại: bỏ comment dòng dưới)
       // { id: 'import', icon: 'upload', label: 'Nhập liệu' },
+      { id: 'projects', icon: 'folder', label: 'Dự án', super: true },
       { id: 'users', icon: 'users', label: 'Người dùng', super: true },
     ],
   },
@@ -146,19 +148,31 @@ function Login({ onLogin, onBack }: { onLogin: (u: User) => void; onBack: () => 
 
 /* ===================== DASHBOARD ===================== */
 function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
+  const isSuper = user.role === 'SUPERADMIN';
   const [nav, setNav] = useState('locations');
   const [locs, setLocs] = useState<Location[]>([]);
   const [camps, setCamps] = useState<Campaign[]>([]);
   const [project, setProject] = useState<Project | null>(null);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [active, setActive] = useState<string>('');
+
+  const loadProjects = async () => {
+    let list: Project[] = [];
+    try { list = isSuper ? await api.adminProjects() : await api.projectsPublic(); } catch { list = []; }
+    if (!isSuper) list = list.filter((p) => (user.projectIds || []).includes(p.id!));
+    setProjects(list);
+    return list;
+  };
   const reload = async () => {
-    setLocs(await api.adminLocations());
-    setCamps(await api.adminCampaigns());
+    setLocs(await api.adminLocations().catch(() => []));
+    setCamps(await api.adminCampaigns().catch(() => []));
     setProject(await api.project().catch(() => null));
     reloadPublic();
   };
-  useEffect(() => { reload(); }, []);
+  useEffect(() => { (async () => { const list = await loadProjects(); setActive(list[0]?.slug || 'bk360'); })(); }, []);
+  useEffect(() => { if (active) { setActiveProject(active); reload(); } /* eslint-disable-next-line react-hooks/exhaustive-deps */ }, [active]);
+
   const logout = async () => { await api.logout().catch(() => {}); setToken(null); setUser(null); onBack(); };
-  const isSuper = user.role === 'SUPERADMIN';
   const groups = NAV_GROUPS.map((g) => ({ ...g, items: g.items.filter((i) => !i.super || isSuper) })).filter((g) => g.items.length);
   const label = groups.flatMap((g) => g.items).find((n) => n.id === nav)?.label || '';
 
@@ -184,7 +198,17 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         <button onClick={logout}><NavIcon name="logout" /><span className="lbl">Đăng xuất</span></button>
       </aside>
       <main className="adm-main">
-        <div className="adm-top"><b>{label}</b><span>{user.email} · {ROLE_SHORT[user.role] || user.role}</span></div>
+        <div className="adm-top">
+          <b>{label}</b>
+          <div className="adm-top-right">
+            {projects.length > 1 && (
+              <select className="proj-switch" value={active} onChange={(e) => setActive(e.target.value)} title="Chọn dự án đang quản lý">
+                {projects.map((p) => <option key={p.id} value={p.slug}>{p.name}</option>)}
+              </select>
+            )}
+            <span>{user.email} · {ROLE_SHORT[user.role] || user.role}</span>
+          </div>
+        </div>
         {nav === 'overview' && <Overview locs={locs} camps={camps} go={setNav} />}
         {nav === 'welcome' && <WelcomePanel welcome={project?.welcome} reload={reload} />}
         {nav === 'locations' && <LocationsPanel locs={locs} mapBg={project?.mapBg} reload={reload} />}
@@ -192,7 +216,8 @@ function Dashboard({ user, setUser, onBack, reloadPublic }: any) {
         {nav === 'vr360' && <VR360Panel locs={locs} vr360={project?.vr360} reload={reload} />}
         {nav === 'campaigns' && <CampaignsPanel camps={camps} locs={locs} reload={reload} />}
         {nav === 'import' && <ImportPanel locs={locs} reload={reload} />}
-        {nav === 'users' && user.role === 'SUPERADMIN' && <UsersPanel meId={user.id || user.sub} />}
+        {nav === 'projects' && isSuper && <ProjectsPanel projects={projects} active={active} reloadProjects={loadProjects} onPick={setActive} />}
+        {nav === 'users' && isSuper && <UsersPanel meId={user.id || user.sub} projects={projects} />}
       </main>
     </div>
   );
@@ -1082,13 +1107,60 @@ function SceneEditor({ scene, scenes, locs, onClose, onSaved }: any) {
   );
 }
 
+/* ===================== DỰ ÁN (SUPERADMIN) ===================== */
+function ProjectsPanel({ projects, active, reloadProjects, onPick }: any) {
+  const [slug, setSlug] = useState('');
+  const [name, setName] = useState('');
+  const [msg, setMsg] = useState('');
+  const base = window.location.origin + import.meta.env.BASE_URL;
+  const linkOf = (p: Project) => (p.slug === 'bk360' ? base : `${base}?project=${p.slug}`);
+  const copy = (url: string) => navigator.clipboard?.writeText(url).then(() => setMsg('Đã copy link ✓')).catch(() => {});
+  const create = async () => {
+    const s = slug.trim().toLowerCase();
+    if (!/^[a-z0-9-]+$/.test(s)) { setMsg('Mã chỉ gồm chữ thường, số và gạch ngang.'); return; }
+    setMsg('Đang tạo…');
+    try { await api.createProject({ slug: s, name: name || s }); setMsg('Đã tạo ✓'); setSlug(''); setName(''); await reloadProjects(); onPick(s); }
+    catch (e: any) { setMsg('Lỗi: ' + e.message); }
+  };
+  return (
+    <div className="adm-body">
+      <div className="adm-card" style={{ maxWidth: 660 }}>
+        <h4 style={{ margin: '0 0 6px' }}>Tạo dự án mới</h4>
+        <p className="muted" style={{ marginTop: 0 }}>Mỗi dự án là một sự kiện/bản đồ độc lập — <b>nội dung và tệp biên tập viên riêng</b>. Người xem mở qua link <code>?project=&lt;mã&gt;</code>.</p>
+        <div className="frow">
+          <div><label>Mã (slug)</label><input value={slug} onChange={(e) => setSlug(e.target.value)} placeholder="vd: khaigiang-2026" /></div>
+          <div><label>Tên hiển thị</label><input value={name} onChange={(e) => setName(e.target.value)} placeholder="Lễ khai giảng 2026" /></div>
+        </div>
+        <div className="btn-row"><button className="aprim" onClick={create}><NavIcon name="plus" size={17} /> Tạo dự án</button></div>
+        {msg && <div className="msg" style={{ marginTop: 8 }}>{msg}</div>}
+      </div>
+      <div className="adm-card" style={{ maxWidth: 660 }}>
+        <h4 style={{ margin: '0 0 8px' }}>Danh sách dự án ({projects.length})</h4>
+        <div className="user-list">
+          {projects.map((p: Project) => (
+            <div className="arow" key={p.id}>
+              <div className="arow-main">
+                <b>{p.name} {p.slug === active && <span className="ok-tag">đang quản lý</span>}</b>
+                <span>{p.slug}</span>
+              </div>
+              <button className="asec" onClick={() => copy(linkOf(p))} title={linkOf(p)}>Copy link xem</button>
+              {p.slug !== active && <button className="asec" onClick={() => onPick(p.slug)}>Quản lý</button>}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ===================== USERS (chỉ SUPERADMIN) ===================== */
 const ROLE_LABEL: Record<string, string> = { SUPERADMIN: 'Quản trị cao nhất', EDITOR: 'Biên tập (đội media)', VIEWER: 'Chỉ xem' };
 
-function UsersPanel({ meId }: { meId?: string }) {
+function UsersPanel({ meId, projects }: { meId?: string; projects?: Project[] }) {
   const [users, setUsers] = useState<User[]>([]);
   const [edit, setEdit] = useState<User | 'new' | null>(null);
   const [msg, setMsg] = useState('');
+  const pName = (id: string) => (projects || []).find((p) => p.id === id)?.name || id;
   const load = async () => { try { setUsers(await api.adminUsers()); } catch (e: any) { setMsg(e.message); } };
   useEffect(() => { load(); }, []);
 
@@ -1112,7 +1184,10 @@ function UsersPanel({ meId }: { meId?: string }) {
           <div className="arow" key={u.id}>
             <div className="arow-main">
               <b>{u.name || u.email} {u.id === meId && <span className="miss-tag">bạn</span>}</b>
-              <span>{u.email} · {ROLE_LABEL[u.role] || u.role}</span>
+              <span>
+                {u.email} · {ROLE_LABEL[u.role] || u.role}
+                {u.role === 'EDITOR' && (u.projectIds?.length ? ' · ' + u.projectIds.map(pName).join(', ') : ' · chưa gán dự án')}
+              </span>
             </div>
             <button className="aic" onClick={() => setEdit(u)} title="Sửa"><NavIcon name="edit" size={17} /></button>
             {u.id !== meId && <button className="aic" onClick={() => del(u)} title="Xoá"><NavIcon name="trash" size={17} /></button>}
@@ -1122,6 +1197,7 @@ function UsersPanel({ meId }: { meId?: string }) {
       {edit && (
         <UserEditor
           user={edit === 'new' ? null : edit}
+          projects={projects || []}
           onClose={() => setEdit(null)}
           onSaved={() => { setEdit(null); setMsg('Đã lưu ✓'); load(); }}
         />
@@ -1130,18 +1206,21 @@ function UsersPanel({ meId }: { meId?: string }) {
   );
 }
 
-function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: () => void; onSaved: () => void }) {
+function UserEditor({ user, projects, onClose, onSaved }: { user: User | null; projects: Project[]; onClose: () => void; onSaved: () => void }) {
   const [email, setEmail] = useState(user?.email || '');
   const [name, setName] = useState(user?.name || '');
   const [role, setRole] = useState(user?.role || 'EDITOR');
+  const [projectIds, setProjectIds] = useState<string[]>(user?.projectIds || []);
   const [password, setPassword] = useState('');
   const [err, setErr] = useState('');
+  const toggleProj = (id: string) => setProjectIds((p) => (p.includes(id) ? p.filter((x) => x !== id) : [...p, id]));
   const save = async () => {
     try {
-      if (user) await api.updateUser(user.id!, { name, role, ...(password ? { password } : {}) });
+      if (role === 'EDITOR' && projectIds.length === 0) { setErr('Chọn ít nhất 1 dự án cho biên tập viên.'); return; }
+      if (user) await api.updateUser(user.id!, { name, role, projectIds, ...(password ? { password } : {}) });
       else {
         if (!email.trim() || password.length < 6) { setErr('Cần email và mật khẩu ≥ 6 ký tự.'); return; }
-        await api.createUser({ email: email.trim(), password, name, role });
+        await api.createUser({ email: email.trim(), password, name, role, projectIds });
       }
       onSaved();
     } catch (e: any) { setErr(e.message); }
@@ -1160,6 +1239,21 @@ function UserEditor({ user, onClose, onSaved }: { user: User | null; onClose: ()
           <option value="EDITOR">Biên tập viên (đội media)</option>
           <option value="SUPERADMIN">Quản trị cao nhất</option>
         </select>
+        {role === 'EDITOR' && (
+          <>
+            <label>Dự án được quản lý <span className="hint-q" title="Biên tập viên chỉ thấy & sửa nội dung các dự án được tick.">ⓘ</span></label>
+            <div className="proj-pick">
+              {projects.length === 0 && <span className="muted">Chưa có dự án nào.</span>}
+              {projects.map((p) => (
+                <label key={p.id} className="chk-row" style={{ marginRight: 14 }}>
+                  <input type="checkbox" checked={projectIds.includes(p.id!)} onChange={() => toggleProj(p.id!)} />
+                  <span>{p.name}</span>
+                </label>
+              ))}
+            </div>
+          </>
+        )}
+        {role === 'SUPERADMIN' && <p className="muted" style={{ marginTop: 8 }}>Quản trị cao nhất truy cập <b>tất cả dự án</b>.</p>}
         <label>{user ? 'Đặt lại mật khẩu (bỏ trống nếu giữ nguyên)' : 'Mật khẩu (≥ 6 ký tự)'}</label>
         <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••" />
         {err && <div className="err">{err}</div>}

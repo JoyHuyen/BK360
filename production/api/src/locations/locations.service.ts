@@ -35,7 +35,8 @@ export class LocationsService {
     return loc;
   }
 
-  async listAll(projectSlug?: string) {
+  async listAll(projectSlug?: string, user?: any) {
+    if (user) await this.projects.accessibleId(user, projectSlug);
     return this.prisma.location.findMany({
       where: await this.where({}, projectSlug),
       orderBy: { order: 'asc' },
@@ -43,10 +44,10 @@ export class LocationsService {
     });
   }
 
-  async create(dto: CreateLocationDto, userId: string) {
-    const projectId = (dto as any).projectId || (await this.projects.defaultId());
+  async create(dto: CreateLocationDto, user: any, projectSlug?: string) {
+    const projectId = (dto as any).projectId || (await this.projects.accessibleId(user, projectSlug));
     const loc = await this.prisma.location.create({ data: { ...(dto as any), projectId } });
-    await this.audit.log(userId, 'CREATE', 'Location', loc.id, dto);
+    await this.audit.log(user.sub, 'CREATE', 'Location', loc.id, dto);
     return loc;
   }
 

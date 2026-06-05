@@ -22,14 +22,14 @@ export class ScenesController {
   // ----- Quản trị -----
   @Roles('EDITOR')
   @Get('admin/scenes')
-  all(@Query('project') project?: string) {
-    return this.svc.listAll(project);
+  all(@Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.listAll(project, user);
   }
 
   @Roles('EDITOR')
   @Post('admin/scenes')
-  create(@Body() dto: CreateSceneDto, @CurrentUser() user: JwtUser) {
-    return this.svc.create(dto, user.sub);
+  create(@Body() dto: CreateSceneDto, @Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.create(dto, user, project);
   }
 
   @Roles('EDITOR')

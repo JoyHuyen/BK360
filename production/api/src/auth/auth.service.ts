@@ -14,8 +14,8 @@ export class AuthService {
     private readonly audit: AuditService,
   ) {}
 
-  private signTokens(user: { id: string; email: string; role: string; name: string | null }) {
-    const payload = { sub: user.id, email: user.email, role: user.role, name: user.name };
+  private signTokens(user: { id: string; email: string; role: string; name: string | null; projectIds?: string[] }) {
+    const payload = { sub: user.id, email: user.email, role: user.role, name: user.name, projectIds: user.projectIds ?? [] };
     const accessToken = this.jwt.sign(payload, {
       secret: this.config.getOrThrow<string>('JWT_ACCESS_SECRET'),
       expiresIn: this.config.get<string>('ACCESS_TTL') ?? '15m',
@@ -30,8 +30,8 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  private publicUser(u: { id: string; email: string; role: string; name: string | null }) {
-    return { id: u.id, email: u.email, role: u.role, name: u.name };
+  private publicUser(u: { id: string; email: string; role: string; name: string | null; projectIds?: string[] }) {
+    return { id: u.id, email: u.email, role: u.role, name: u.name, projectIds: u.projectIds ?? [] };
   }
 
   async login(email: string, password: string) {

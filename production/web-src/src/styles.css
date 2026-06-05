@@ -301,6 +301,10 @@ svg.campus{width:100%;height:100%;display:block}
 .import-preview{margin-top:14px;border-top:1px dashed var(--line);padding-top:14px}
 .ip-row{font-size:13.5px;color:#33425a;display:flex;align-items:center;gap:6px;flex-wrap:wrap}
 .import-log{margin-top:12px;background:#e6f6ec;border:1px solid #b6e3c4;color:#1b7a3d;border-radius:10px;padding:10px 12px;font-size:13px;font-weight:600}
+.adm-top-right{display:flex;align-items:center;gap:12px}
+.proj-switch{padding:7px 11px;border:1px solid var(--line);border-radius:9px;font-size:13px;font-weight:700;color:var(--bk-red);background:#fff;cursor:pointer;max-width:200px}
+.proj-pick{display:flex;flex-wrap:wrap;gap:6px 14px;margin-top:2px}
+.am-card code,.muted code{background:#eef1f5;padding:1px 5px;border-radius:5px;font-size:12px}
 .welcome-bg-prev{display:flex;gap:12px;align-items:flex-start;margin-top:4px}
 .welcome-bg-prev img{width:180px;max-width:50%;border-radius:10px;border:1px solid var(--line);display:block}
 /* Checklist "cần bổ sung" */

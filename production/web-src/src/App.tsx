@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, lazy, Suspense } from 'react';
-import { api, setToken } from './api';
+import { api, setToken, setActiveProject } from './api';
 import type { Campaign, Lang, Location, Project, Scene, Screen, User } from './types';
 import Welcome from './screens/Welcome';
 import Map2D from './screens/Map2D';
@@ -23,6 +23,10 @@ export default function App() {
   const [project, setProject] = useState<Project | null>(null);
   const [user, setUser] = useState<User | null>(null);
   const [err, setErr] = useState<string | null>(null);
+
+  // Chọn project theo ?project=slug trên URL (mặc định project mặc định).
+  const urlProject = new URLSearchParams(window.location.search).get('project');
+  if (urlProject) setActiveProject(urlProject);
 
   const loadPublic = useCallback(async () => {
     try {

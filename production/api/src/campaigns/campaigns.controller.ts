@@ -22,14 +22,14 @@ export class CampaignsController {
   // ----- Quản trị -----
   @Roles('EDITOR')
   @Get('admin/campaigns')
-  all(@Query('project') project?: string) {
-    return this.svc.listAll(project);
+  all(@Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.listAll(project, user);
   }
 
   @Roles('EDITOR')
   @Post('admin/campaigns')
-  create(@Body() dto: CreateCampaignDto, @CurrentUser() user: JwtUser) {
-    return this.svc.create(dto, user.sub);
+  create(@Body() dto: CreateCampaignDto, @Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.create(dto, user, project);
   }
 
   @Roles('EDITOR')

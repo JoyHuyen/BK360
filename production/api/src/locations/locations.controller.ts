@@ -30,14 +30,14 @@ export class LocationsController {
   // ----- Quản trị (EDITOR trở lên) -----
   @Roles('EDITOR')
   @Get('admin/locations')
-  all(@Query('project') project?: string) {
-    return this.svc.listAll(project);
+  all(@Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.listAll(project, user);
   }
 
   @Roles('EDITOR')
   @Post('admin/locations')
-  create(@Body() dto: CreateLocationDto, @CurrentUser() user: JwtUser) {
-    return this.svc.create(dto, user.sub);
+  create(@Body() dto: CreateLocationDto, @Query('project') project: string, @CurrentUser() user: JwtUser) {
+    return this.svc.create(dto, user, project);
   }
 
   @Roles('EDITOR')

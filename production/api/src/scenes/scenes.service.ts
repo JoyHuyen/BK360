@@ -24,17 +24,18 @@ export class ScenesService {
     });
   }
 
-  async listAll(projectSlug?: string) {
+  async listAll(projectSlug?: string, user?: any) {
+    if (user) await this.projects.accessibleId(user, projectSlug);
     return this.prisma.scene.findMany({
       where: await this.where({}, projectSlug),
       orderBy: { order: 'asc' },
     });
   }
 
-  async create(dto: CreateSceneDto, userId: string) {
-    const projectId = (dto as any).projectId || (await this.projects.defaultId());
+  async create(dto: CreateSceneDto, user: any, projectSlug?: string) {
+    const projectId = (dto as any).projectId || (await this.projects.accessibleId(user, projectSlug));
     const scene = await this.prisma.scene.create({ data: { ...(dto as any), projectId } });
-    await this.audit.log(userId, 'CREATE', 'Scene', scene.id, { slug: dto.slug });
+    await this.audit.log(user.sub, 'CREATE', 'Scene', scene.id, { slug: dto.slug });
     return scene;
   }
 

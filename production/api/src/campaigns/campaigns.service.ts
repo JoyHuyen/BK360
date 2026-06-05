@@ -24,17 +24,18 @@ export class CampaignsService {
     });
   }
 
-  async listAll(projectSlug?: string) {
+  async listAll(projectSlug?: string, user?: any) {
+    if (user) await this.projects.accessibleId(user, projectSlug);
     return this.prisma.campaign.findMany({
       where: await this.where({}, projectSlug),
       orderBy: { order: 'asc' },
     });
   }
 
-  async create(dto: CreateCampaignDto, userId: string) {
-    const projectId = (dto as any).projectId || (await this.projects.defaultId());
+  async create(dto: CreateCampaignDto, user: any, projectSlug?: string) {
+    const projectId = (dto as any).projectId || (await this.projects.accessibleId(user, projectSlug));
     const c = await this.prisma.campaign.create({ data: { ...(dto as any), projectId } });
-    await this.audit.log(userId, 'CREATE', 'Campaign', c.id, dto);
+    await this.audit.log(user.sub, 'CREATE', 'Campaign', c.id, dto);
     return c;
   }
 

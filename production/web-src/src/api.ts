@@ -9,8 +9,15 @@ export const setToken = (t: string | null) => {
 };
 export const getToken = () => accessToken;
 
+// Project đang xem/quản lý — tự động gắn ?project vào mọi request.
+let activeProject: string | null = null;
+export const setActiveProject = (s: string | null) => { activeProject = s; };
+export const getActiveProject = () => activeProject;
+const withProject = (path: string) =>
+  activeProject ? path + (path.includes('?') ? '&' : '?') + 'project=' + encodeURIComponent(activeProject) : path;
+
 async function req<T = any>(path: string, opts: RequestInit = {}): Promise<T> {
-  const res = await fetch(API_BASE + path, {
+  const res = await fetch(API_BASE + withProject(path), {
     credentials: 'include',
     ...opts,
     headers: {
@@ -33,6 +40,10 @@ export const api = {
   locations: () => req<Location[]>('/locations'),
   campaigns: () => req<Campaign[]>('/campaigns'),
   scenes: () => req<import('./types').Scene[]>('/scenes'),
+  projectsPublic: () => req<import('./types').Project[]>('/projects'),
+  // quản lý project (SUPERADMIN)
+  adminProjects: () => req<import('./types').Project[]>('/projects/admin/all'),
+  createProject: (d: { slug: string; name?: string }) => req('/projects/admin', { method: 'POST', body: JSON.stringify(d) }),
   project: () => req<import('./types').Project | null>('/projects/current'),
   updateProject: (d: { mapBg?: string | null; name?: string; vr360?: import('./types').Vr360Config; welcome?: import('./types').WelcomeConfig | null }) =>
     req('/projects/current', { method: 'PATCH', body: JSON.stringify(d) }),
@@ -79,7 +90,7 @@ export const api = {
     fd.append('kind', kind);
     if (locationId) fd.append('locationId', locationId);
     if (lang) fd.append('lang', lang);
-    return fetch(API_BASE + '/admin/media', {
+    return fetch(API_BASE + withProject('/admin/media'), {
       method: 'POST',
       credentials: 'include',
       headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
@@ -105,9 +116,9 @@ export const api = {
 
   // users (chỉ SUPERADMIN)
   adminUsers: () => req<User[]>('/admin/users'),
-  createUser: (d: { email: string; password: string; name?: string; role?: string }) =>
+  createUser: (d: { email: string; password: string; name?: string; role?: string; projectIds?: string[] }) =>
     req('/admin/users', { method: 'POST', body: JSON.stringify(d) }),
-  updateUser: (id: string, d: { name?: string; role?: string; password?: string }) =>
+  updateUser: (id: string, d: { name?: string; role?: string; password?: string; projectIds?: string[] }) =>
     req(`/admin/users/${id}`, { method: 'PATCH', body: JSON.stringify(d) }),
   deleteUser: (id: string) => req(`/admin/users/${id}`, { method: 'DELETE' }),
 
