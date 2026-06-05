@@ -292,4 +292,6 @@ const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1250 1070" pre
 <g>${inner('trees-front')}</g>
 <text class="rlab" x="958" y="455" text-anchor="middle" font-size="11" fill="#6b6450">KÝ TÚC XÁ</text>
 </svg>`;
-process.stdout.write(svg);
+// Bỏ filter nhám (feTurbulence) → SVG nét ở mọi mức zoom, nhẹ & mượt (không re-raster filter).
+const out = svg.replace(/ filter="url\(#rough\)"/g, '');
+process.stdout.write(out);

@@ -30,7 +30,7 @@ function normalize(v: any, kind: 'image' | 'audio') {
 const yes = (v: any) => ['có', 'co', 'yes', 'x', '1', 'true'].includes(String(v == null ? '' : v).trim().toLowerCase());
 
 // Bản đồ nền dùng chung với public (CampusMap). Toạ độ pin nằm trong hệ này.
-const MAP_URL = `${import.meta.env.BASE_URL}campus-map.png`;
+const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const MAP_W = 1250;
 const MAP_H = 1070;
 

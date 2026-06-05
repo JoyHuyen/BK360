@@ -4,7 +4,7 @@ import { tx } from '../i18n';
 
 // Bản đồ nền vẽ tay (sinh từ ban-do-bk-vetay.html -> generate-map-svg.cjs).
 // Toạ độ địa điểm (mapX/mapY) nằm trong hệ viewBox 1250 x 1070 của ảnh nền.
-const MAP_URL = `${import.meta.env.BASE_URL}campus-map.png`;
+const MAP_URL = `${import.meta.env.BASE_URL}campus-map.svg`;
 const VB_W = 1250;
 const VB_H = 1070;
 
